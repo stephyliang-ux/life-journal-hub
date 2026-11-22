@@ -1,0 +1,3754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>个人生活全景管理与日记本</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    // Tailwind design tokens for ivory/warm cream minimal aesthetic
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ivory: '#FAF8F5',
+            linen: '#EFECE6',
+            sage: '#4A6B5D',
+            slateblue: '#4A607A',
+            terracotta: '#C26D53',
+            amberwarm: '#C88A36',
+            ink: {
+              900: '#232725',
+              700: '#49504C',
+              500: '#767E79',
+            },
+          },
+          fontFamily: {
+            serif: ['"Noto Serif SC"', 'Georgia', 'serif'],
+            sans: ['"Noto Sans SC"', 'sans-serif'],
+          },
+          boxShadow: {
+            card: '0 4px 20px -4px rgba(35, 39, 37, 0.06)',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    /* Base styling for warm ivory surface and legible typography */
+    body {
+      background-color: #FAF8F5;
+      color: #232725;
+      font-family: "Noto Sans SC", sans-serif;
+      overflow-x: hidden;
+    }
+    .font-editorial {
+      font-family: "Noto Serif SC", Georgia, serif;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D6D0C4;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Toast Banner (replaces native alert/confirm) -->
+  <div id="toastBanner" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-5 sm:bottom-5 z-50 hidden max-w-sm mx-auto sm:mx-0 bg-ink-900 text-white px-4 py-3.5 rounded-2xl shadow-xl border border-ink-700">
+    <div class="flex items-start gap-2.5 text-xs">
+      <span id="toastIcon" class="text-base leading-none shrink-0 mt-0.5">🌿</span>
+      <div class="flex-1 min-w-0">
+        <div id="toastTitle" class="font-bold text-white">提示</div>
+        <div id="toastMsg" class="text-ivory/80 mt-0.5 break-words"></div>
+      </div>
+      <button type="button" onclick="hideToast()" class="text-ivory/60 hover:text-white font-bold px-1 shrink-0">✕</button>
+    </div>
+  </div>
+
+  <!-- Sticky Top Header -->
+  <header class="sticky top-0 z-40 bg-ivory/95 backdrop-blur border-b border-linen">
+    <div class="max-w-7xl mx-auto px-3.5 sm:px-6 py-2.5 sm:py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-sage text-white flex items-center justify-center text-base sm:text-lg shadow-sm shrink-0">
+            🌿
+          </div>
+          <div class="min-w-0">
+            <h1 class="font-editorial text-sm sm:text-lg font-bold text-ink-900 truncate">个人生活全景管理与日记本</h1>
+            <p class="text-[11px] text-ink-500 truncate">本地缓存 · 自动云端同步 · JSON 备份</p>
+          </div>
+        </div>
+
+        <!-- Mobile Settings Trigger -->
+        <button type="button" onclick="toggleCloudDrawer()" class="md:hidden px-3 py-2 rounded-2xl bg-white border border-linen text-ink-900 text-xs font-semibold shrink-0 active:scale-[0.99]">
+          ⚙ 设置
+        </button>
+      </div>
+
+      <!-- Date Picker & Quiet Status / Settings Trigger -->
+      <div class="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 sm:gap-2">
+        <div class="flex items-center bg-white border border-linen rounded-2xl p-1 flex-1 sm:flex-initial justify-between sm:justify-start">
+          <button type="button" onclick="shiftDate(-1)" title="前一天" class="px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-xl text-xs font-bold text-ink-700 hover:bg-linen transition">
+            ◀
+          </button>
+          <input
+            type="date"
+            id="headerDatePicker"
+            onchange="setSelectedDate(this.value)"
+            class="bg-transparent px-1.5 sm:px-2 py-1 text-xs font-bold text-ink-900 focus:outline-none text-center"
+          />
+          <button type="button" onclick="shiftDate(1)" title="后一天" class="px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-xl text-xs font-bold text-ink-700 hover:bg-linen transition">
+            ▶
+          </button>
+          <button type="button" onclick="jumpToToday()" class="ml-0.5 px-2.5 py-1.5 sm:py-1 rounded-xl bg-sage/10 text-sage hover:bg-sage/20 text-xs font-bold transition shrink-0">
+            今
+          </button>
+        </div>
+
+        <!-- Quiet status indicator + on-demand settings drawer button -->
+        <div class="flex items-center gap-1.5">
+          <button
+            type="button"
+            id="headerSyncPill"
+            onclick="toggleCloudDrawer()"
+            title="点击打开设置"
+            class="px-2.5 py-1.5 rounded-2xl bg-white border border-linen text-[11px] font-semibold text-ink-500 hover:bg-linen/60 transition shrink-0"
+          >
+            本地已存
+          </button>
+          <button
+            type="button"
+            onclick="toggleCloudDrawer()"
+            class="hidden md:inline-flex px-3 py-2 rounded-2xl bg-white hover:bg-linen border border-linen text-ink-900 text-xs font-semibold transition shrink-0"
+          >
+            ⚙ 设置
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Navigation Tabs: "主页" + 8 Pillars + "日记" + "购买清单" -->
+    <nav class="max-w-7xl mx-auto px-3.5 sm:px-6 pb-2.5 overflow-x-auto no-scrollbar">
+      <div id="navTabsContainer" class="flex items-center gap-1.5 min-w-max"></div>
+    </nav>
+  </header>
+
+  <!-- On-Demand Modal/Drawer: "设置" (Hidden by default) -->
+  <div id="cloudSyncPanel" onclick="handleDrawerBackdropClick(event)" class="hidden fixed inset-0 z-50 bg-ink-900/35 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-xl rounded-t-3xl sm:rounded-3xl p-5 border border-linen shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between gap-2 pb-2 border-b border-linen">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-bold text-ink-900">⚙ 设置</span>
+          <span id="cloudStatusBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-linen text-ink-700">本地模式</span>
+        </div>
+        <button type="button" onclick="toggleCloudDrawer()" class="px-2.5 py-1 rounded-xl bg-ivory border border-linen text-xs font-semibold text-ink-700">
+          关闭
+        </button>
+      </div>
+
+      <!-- JSON Export / Import Backup & Manual Cloud Trigger -->
+      <div class="p-3.5 rounded-2xl bg-ivory border border-linen space-y-2">
+        <div class="text-xs font-bold text-ink-900">备份与同步</div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="exportBackupJson()" class="px-3.5 py-2 rounded-xl bg-sage hover:bg-sage/90 text-white text-xs font-semibold transition">
+            ⬇ 导出 JSON
+          </button>
+          <label class="px-3.5 py-2 rounded-xl bg-white hover:bg-linen border border-linen text-ink-900 text-xs font-semibold cursor-pointer transition">
+            ⬆ 导入 JSON
+            <input type="file" accept=".json,application/json" onchange="importBackupJson(event)" class="hidden" />
+          </label>
+          <button type="button" onclick="syncStateToCloud(true)" class="px-3.5 py-2 rounded-xl bg-slateblue hover:bg-slateblue/90 text-white text-xs font-semibold transition">
+            ☁ 立即同步
+          </button>
+        </div>
+      </div>
+
+      <!-- Supabase Config -->
+      <div class="space-y-2.5 text-xs">
+        <div class="text-xs font-bold text-ink-900">云端连接配置（后台自动同步）</div>
+        <div>
+          <label class="block text-[11px] font-semibold text-ink-700 mb-1">Supabase Project URL</label>
+          <input
+            id="sbUrlInput"
+            type="url"
+            placeholder="https://xxxx.supabase.co"
+            class="w-full bg-ivory border border-linen rounded-xl px-3 py-2 text-xs text-ink-900"
+          />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-ink-700 mb-1">Supabase Anon Key</label>
+          <input
+            id="sbAnonKeyInput"
+            type="password"
+            placeholder="eyJ..."
+            class="w-full bg-ivory border border-linen rounded-xl px-3 py-2 text-xs text-ink-900"
+          />
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <button type="button" onclick="saveSupabaseConfig()" class="px-3 py-1.5 rounded-xl bg-ink-900 text-white font-semibold">
+            保存配置
+          </button>
+          <span id="cloudAccountLabel" class="text-ink-500">未登录云端账号</span>
+        </div>
+      </div>
+
+      <!-- Persistent Auth Controls -->
+      <div id="cloudAuthForm" class="pt-3 border-t border-linen space-y-2 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input id="sbEmailInput" type="email" placeholder="邮箱" class="bg-ivory border border-linen rounded-xl px-3 py-2 text-xs" />
+          <input id="sbPasswordInput" type="password" placeholder="密码（至少6位）" class="bg-ivory border border-linen rounded-xl px-3 py-2 text-xs" />
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="signInCloudUser()" class="px-3.5 py-1.5 rounded-xl bg-sage text-white font-semibold">登录</button>
+          <button type="button" onclick="signUpCloudUser()" class="px-3.5 py-1.5 rounded-xl bg-white border border-linen text-ink-900 font-semibold">注册</button>
+          <button type="button" onclick="signOutCloudUser()" class="px-3.5 py-1.5 rounded-xl bg-ivory border border-linen text-ink-700 font-semibold">退出</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Workspace -->
+  <main id="mainContainer" class="flex-1 max-w-7xl w-full mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-5 sm:space-y-6"></main>
+
+  <!-- Footer -->
+  <footer class="max-w-7xl w-full mx-auto px-3.5 sm:px-6 py-4 sm:py-5 border-t border-linen text-xs text-ink-500 flex flex-wrap items-center justify-between gap-2">
+    <span>本地自动保存 · 云端自动同步 · JSON 备份恢复</span>
+    <span id="archiveStatsText">已归档：0 天</span>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // 1. Constants & Initial State Schema
+    // =========================================================================
+    const STORAGE_KEY = 'life_journal_hub_complete_v5';
+    const LEGACY_STORAGE_KEYS = ['life_journal_hub_complete_v4', 'life_journal_hub_complete_v3'];
+    const CLOUD_CONFIG_KEY = 'life_journal_hub_supabase_cfg_v1';
+
+    function getLocalTodayIso() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function getCurrentMonthYm(isoDate) {
+      return String(isoDate || getLocalTodayIso()).slice(0, 7);
+    }
+
+    const DEFAULT_TODAY = getLocalTodayIso();
+    const DEFAULT_MONTH = getCurrentMonthYm(DEFAULT_TODAY);
+
+    // Top Navigation Tabs: "主页" + 8 Pillars + "日记" + "购买清单"
+    const SECTIONS = [
+      { id: 'home', label: '主页', icon: '🏡' },
+      { id: 'health', label: '健康', icon: '🌿' },
+      { id: 'career', label: '职业与学习', icon: '💻' },
+      { id: 'english', label: '英语', icon: '🗣️' },
+      { id: 'house', label: '家庭', icon: '🧹' },
+      { id: 'pantry', label: '食物', icon: '🫙' },
+      { id: 'child', label: '孩子学习', icon: '🎒' },
+      { id: 'reading', label: '阅读', icon: '📚' },
+      { id: 'monthly', label: '每月待办', icon: '🗓️' },
+      { id: 'diary', label: '日记', icon: '📖' },
+      { id: 'shopping', label: '购买清单', icon: '🛒' },
+    ];
+
+    const CHECKIN_OPTIONS = [
+      { key: 'goodEnergy', label: '状态良好', icon: '🌿', desc: '按原计划推进', tone: 'sage' },
+      { key: 'jointDiscomfort', label: '关节不适', icon: '🦶', desc: '低冲击、少负重', tone: 'terracotta' },
+      { key: 'piriformisTight', label: '肌肉紧绷', icon: '🧘‍♀️', desc: '优先拉伸放松', tone: 'terracotta' },
+      { key: 'busyLowSleep', label: '睡眠不足 / 忙碌', icon: '🌙', desc: '适度降载休息', tone: 'amberwarm' },
+    ];
+
+    const DEFAULT_WEEKLY_SCHEDULE = [
+      { dayOfWeek: 1, dayName: '周一', type: '拉伸恢复', isStrength: false, title: '全身筋膜放松 + 温和拉伸', duration: '20 分钟', detail: '下肢与肩颈温和伸展，放松紧绷部位。' },
+      { dayOfWeek: 2, dayName: '周二', type: '力量训练', isStrength: true, title: '下肢力量训练（深蹲 / 臀桥 / 硬拉）', duration: '35 分钟', detail: '控制动作节奏，按当日状态调整哑铃重量。' },
+      { dayOfWeek: 3, dayName: '周三', type: '力量训练', isStrength: true, title: '上肢与核心训练（划船 / 推举 / 核心）', duration: '30 分钟', detail: '关注肩胛稳定与核心控制。' },
+      { dayOfWeek: 4, dayName: '周四', type: '低冲击训练', isStrength: true, title: '臀腿稳定与核心控制', duration: '30 分钟', detail: '侧步走、臀桥与核心稳定练习。' },
+      { dayOfWeek: 5, dayName: '周五', type: '舒缓恢复', isStrength: false, title: '舒缓操 + 睡前温水泡脚', duration: '20 分钟', detail: '缓解一周疲劳，准备周末节奏。' },
+      { dayOfWeek: 6, dayName: '周六', type: '全身力量', isStrength: true, title: '全身复合力量训练 + 放松', duration: '40 分钟', detail: '复合动作搭配全身拉伸。' },
+      { dayOfWeek: 0, dayName: '周日', type: '户外活动', isStrength: false, title: '户外快走 / 散步 + 拉伸', duration: '30 分钟', detail: '户外走动晒太阳，放松身心。' },
+    ];
+
+    const FOOD_CATEGORIES = ['主食', '豆制品', '调味料', '海味干货', '蛋白肉蛋', '生鲜果蔬', '其他'];
+    const MONTHLY_CATEGORIES = ['健康运动', '职业英语', '家庭整理', '孩子读书', '其他'];
+    const SHOPPING_CATEGORIES = ['食物/干货', '运动/健康', '日用/家居', '孩子学习', '书籍/工具', '其他'];
+    const PRIORITIES = ['高', '中', '低'];
+
+    const GRADE_RANK_MAP = {
+      'A+': 98, 'A': 93, 'A-': 90,
+      'B+': 86, 'B': 82, 'B-': 78,
+      'C+': 74, 'C': 70, 'C-': 66,
+      'D': 58, 'E': 45,
+    };
+
+    const WEEKDAY_NAMES_CN = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+    function createEmptyDayEntry(dateStr) {
+      return {
+        date: dateStr,
+        status: {
+          goodEnergy: true,
+          jointDiscomfort: false,
+          piriformisTight: false,
+          busyLowSleep: false,
+        },
+        weightKg: '',
+        isPeriodDay: false,
+        health: {
+          checklist: {
+            balancedDiet: false,
+            hydration: false,
+            eveningCare: false,
+            earlySleep: false,
+          },
+          boredScrolling: null,
+          boredScrollingNote: '',
+          essentialOilMassage: null,
+          essentialOilMassageNote: '',
+          note: '',
+          supplementsTaken: {},
+          meditationSessions: 0,
+          meditationMinutes: 0,
+          meditationNote: '',
+        },
+        exercise: {
+          actualWorkout: '',
+          durationMin: '',
+          upperDumbbellKg: 2.5,
+          lowerDumbbellKg: 5.0,
+          completed: false,
+          note: '',
+        },
+        english: {
+          minutes: '',
+          topic: '',
+          note: '',
+        },
+        journal: {
+          mood: '平和',
+          gratitude: '',
+          freeText: '',
+        },
+      };
+    }
+
+    function createSeededState() {
+      const todayEntry = createEmptyDayEntry(DEFAULT_TODAY);
+      todayEntry.health.checklist = {
+        balancedDiet: true,
+        hydration: true,
+        eveningCare: false,
+        earlySleep: false,
+      };
+      todayEntry.health.supplementsTaken = { sup_1: true, sup_2: false };
+      todayEntry.health.meditationSessions = 1;
+      todayEntry.health.meditationMinutes = 10;
+      todayEntry.health.meditationNote = '安静坐息 10 分钟';
+      todayEntry.exercise = {
+        actualWorkout: '户外快走 / 散步 + 拉伸',
+        durationMin: '30',
+        upperDumbbellKg: 2.5,
+        lowerDumbbellKg: 5.0,
+        completed: false,
+        note: '',
+      };
+      todayEntry.english = {
+        minutes: '20',
+        topic: '日常表达与阅读跟读',
+        note: '',
+      };
+      todayEntry.journal = {
+        mood: '平和',
+        gratitude: '按自己的节奏记录生活与各项计划。',
+        freeText: '',
+      };
+
+      const days = {};
+      days[DEFAULT_TODAY] = todayEntry;
+
+      const monthlyTasks = {};
+      monthlyTasks[DEFAULT_MONTH] = [
+        { id: 'mt_1', title: '完成本月干货与冰箱盘点', category: '家庭整理', priority: '高', completed: false, note: '' },
+        { id: 'mt_2', title: '推进一项职业提升项目里程碑', category: '职业英语', priority: '高', completed: false, note: '' },
+        { id: 'mt_3', title: '整理孩子新学期学习重点', category: '孩子读书', priority: '中', completed: false, note: '' },
+      ];
+
+      return {
+        updatedAt: new Date().toISOString(),
+        meta: {
+          selectedDate: DEFAULT_TODAY,
+          selectedMonth: DEFAULT_MONTH,
+          selectedMonthlyYear: DEFAULT_MONTH.slice(0, 4),
+          selectedJournalYear: DEFAULT_TODAY.slice(0, 4),
+          journalYearFilter: 'all',
+          activeSection: 'home',
+          pantryCategoryFilter: '全部',
+          pantryRecipeSeed: 0,
+          houseReminderEnabled: true,
+          childCompareTermA: '2026 Term 1',
+          childCompareTermB: '2026 Term 2',
+          shoppingFilterStatus: 'all',
+          shoppingFilterCategory: '全部',
+          monthlyFilterCategory: '全部',
+        },
+        cycle: {
+          cycleLength: 28,
+          lastPeriodStart: '',
+        },
+        supplements: [
+          { id: 'sup_1', name: '维生素 D3', dosage: '1粒', timing: '早餐后', stockNote: '充足' },
+          { id: 'sup_2', name: '鱼油 / 镁剂', dosage: '1粒', timing: '晚间', stockNote: '充足' },
+        ],
+        giEpisodes: [],
+        weeklySchedule: DEFAULT_WEEKLY_SCHEDULE.map((item) => ({ ...item })),
+        careerGoals: [
+          { id: 'cg_1', goalTitle: '提升专业能力与工作效能', projectTitle: '建立个人工作流与项目复盘清单', completed: false },
+        ],
+        englishBank: [
+          { id: 'eng_1', phrase: 'Let me break this down step by step.', meaning: '我们一步步来拆解。', context: '沟通', mastered: false },
+        ],
+        houseTasks: [
+          { id: 'ht_1', zoneTask: '厨房台面与灶台整理', dayOfWeek: 1, reminderTime: '20:00', reminderEnabled: true, completedThisWeek: false },
+          { id: 'ht_2', zoneTask: '客厅与书桌归位', dayOfWeek: 3, reminderTime: '20:00', reminderEnabled: true, completedThisWeek: false },
+          { id: 'ht_3', zoneTask: '卧室与储物区整理', dayOfWeek: 6, reminderTime: '10:00', reminderEnabled: true, completedThisWeek: false },
+        ],
+        pantryItems: [
+          { id: 'pt_1', category: '主食', name: '大米 / 杂粮米', quantity: '2 kg', location: '厨房米桶', expiryDate: '2027-03-01', note: '' },
+          { id: 'pt_2', category: '豆制品', name: '豆腐 / 腐竹', quantity: '1 份', location: '冰箱 / 干货架', expiryDate: '2026-12-10', note: '' },
+          { id: 'pt_3', category: '调味料', name: '生抽 / 橄榄油 / 姜蒜', quantity: '常备', location: '调味架', expiryDate: '2027-06-01', note: '' },
+        ],
+        childReportCards: {
+          terms: ['2026 Term 1', '2026 Term 2'],
+          subjects: [
+            {
+              id: 'sub_1',
+              subject: 'English',
+              grades: { '2026 Term 1': 'B', '2026 Term 2': 'B+' },
+              metrics: {
+                '2026 Term 1': { achievement: 'B', effort: 'B+' },
+                '2026 Term 2': { achievement: 'B+', effort: 'A-' },
+              },
+              teacherNote: '',
+            },
+            {
+              id: 'sub_2',
+              subject: 'Mathematics',
+              grades: { '2026 Term 1': 'B+', '2026 Term 2': 'A-' },
+              metrics: {
+                '2026 Term 1': { achievement: 'B+', effort: 'A-' },
+                '2026 Term 2': { achievement: 'A-', effort: 'A' },
+              },
+              teacherNote: '',
+            },
+            {
+              id: 'sub_3',
+              subject: 'Science',
+              grades: { '2026 Term 1': 'B', '2026 Term 2': 'B' },
+              metrics: {
+                '2026 Term 1': { achievement: 'B', effort: 'B' },
+                '2026 Term 2': { achievement: 'B', effort: 'B+' },
+              },
+              teacherNote: '',
+            },
+          ],
+        },
+        readingList: [
+          { id: 'bk_1', title: '《原子习惯》', completed: false, actionProject: '将固定习惯与晚间流程绑定', actionDone: false },
+        ],
+        monthlyTasks,
+        shoppingList: [
+          { id: 'sp_1', name: '密封保鲜盒', category: '日用/家居', priority: '中', note: '', bought: false },
+        ],
+        days,
+        entries: {},
+      };
+    }
+
+    function normalizeDayEntry(rawEntry, dateStr) {
+      const base = createEmptyDayEntry(dateStr || DEFAULT_TODAY);
+      if (!rawEntry || typeof rawEntry !== 'object') return base;
+      const rawHealth = rawEntry.health && typeof rawEntry.health === 'object' ? rawEntry.health : {};
+      const rawChecklist = rawHealth.checklist && typeof rawHealth.checklist === 'object' ? rawHealth.checklist : {};
+      const rawExercise = rawEntry.exercise && typeof rawEntry.exercise === 'object' ? rawEntry.exercise : {};
+      const rawEnglish = rawEntry.english && typeof rawEntry.english === 'object' ? rawEntry.english : {};
+      const rawJournal = rawEntry.journal && typeof rawEntry.journal === 'object' ? rawEntry.journal : {};
+      const rawStatus = rawEntry.status && typeof rawEntry.status === 'object' ? rawEntry.status : {};
+
+      return {
+        ...base,
+        ...rawEntry,
+        date: rawEntry.date || dateStr || DEFAULT_TODAY,
+        status: { ...base.status, ...rawStatus },
+        weightKg: rawEntry.weightKg ?? '',
+        isPeriodDay: !!rawEntry.isPeriodDay,
+        health: {
+          ...base.health,
+          ...rawHealth,
+          checklist: { ...base.health.checklist, ...rawChecklist },
+          boredScrolling: rawHealth.boredScrolling === true ? true : rawHealth.boredScrolling === false ? false : null,
+          boredScrollingNote: String(rawHealth.boredScrollingNote || ''),
+          essentialOilMassage:
+            rawHealth.essentialOilMassage === true ? true : rawHealth.essentialOilMassage === false ? false : null,
+          essentialOilMassageNote: String(rawHealth.essentialOilMassageNote || ''),
+          supplementsTaken:
+            rawHealth.supplementsTaken && typeof rawHealth.supplementsTaken === 'object'
+              ? { ...rawHealth.supplementsTaken }
+              : {},
+          meditationSessions: Number(rawHealth.meditationSessions) || 0,
+          meditationMinutes: Number(rawHealth.meditationMinutes) || 0,
+          meditationNote: String(rawHealth.meditationNote || ''),
+        },
+        exercise: { ...base.exercise, ...rawExercise },
+        english: { ...base.english, ...rawEnglish },
+        journal: { ...base.journal, ...rawJournal },
+      };
+    }
+
+    function normalizeLoadedState(parsed) {
+      const base = createSeededState();
+      if (!parsed || typeof parsed !== 'object') return base;
+
+      const merged = {
+        ...base,
+        ...parsed,
+        meta: { ...base.meta, ...(parsed.meta || {}) },
+        cycle: { ...base.cycle, ...(parsed.cycle || {}) },
+        supplements: Array.isArray(parsed.supplements) ? parsed.supplements : base.supplements,
+        giEpisodes: Array.isArray(parsed.giEpisodes) ? parsed.giEpisodes : base.giEpisodes,
+        weeklySchedule:
+          Array.isArray(parsed.weeklySchedule) && parsed.weeklySchedule.length === 7
+            ? parsed.weeklySchedule
+            : base.weeklySchedule,
+        careerGoals: Array.isArray(parsed.careerGoals) ? parsed.careerGoals : base.careerGoals,
+        englishBank: Array.isArray(parsed.englishBank) ? parsed.englishBank : base.englishBank,
+        houseTasks: Array.isArray(parsed.houseTasks) ? parsed.houseTasks : base.houseTasks,
+        pantryItems: Array.isArray(parsed.pantryItems) ? parsed.pantryItems : base.pantryItems,
+        childReportCards:
+          parsed.childReportCards && Array.isArray(parsed.childReportCards.subjects)
+            ? {
+                terms: Array.isArray(parsed.childReportCards.terms) && parsed.childReportCards.terms.length
+                  ? parsed.childReportCards.terms
+                  : base.childReportCards.terms,
+                subjects: parsed.childReportCards.subjects,
+              }
+            : base.childReportCards,
+        readingList: Array.isArray(parsed.readingList) ? parsed.readingList : base.readingList,
+        monthlyTasks:
+          parsed.monthlyTasks && typeof parsed.monthlyTasks === 'object'
+            ? parsed.monthlyTasks
+            : base.monthlyTasks,
+        days: {},
+        entries: parsed.entries && typeof parsed.entries === 'object' ? { ...parsed.entries } : {},
+      };
+
+      if (parsed.days && typeof parsed.days === 'object') {
+        Object.keys(parsed.days).forEach((dKey) => {
+          merged.days[dKey] = normalizeDayEntry(parsed.days[dKey], dKey);
+        });
+      }
+
+      if (Array.isArray(parsed.shoppingList)) {
+        merged.shoppingList = parsed.shoppingList;
+      } else if (parsed.shoppingList && typeof parsed.shoppingList === 'object') {
+        merged.shoppingList = Object.values(parsed.shoppingList).filter((x) => x && typeof x === 'object');
+      } else {
+        merged.shoppingList = base.shoppingList;
+      }
+
+      const validIds = new Set(SECTIONS.map((s) => s.id));
+      if (!validIds.has(merged.meta.activeSection)) {
+        merged.meta.activeSection = 'home';
+      }
+
+      return merged;
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          return normalizeLoadedState(JSON.parse(raw));
+        }
+        for (const oldKey of LEGACY_STORAGE_KEYS) {
+          const oldRaw = localStorage.getItem(oldKey);
+          if (oldRaw) {
+            return normalizeLoadedState(JSON.parse(oldRaw));
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load state:', e);
+      }
+      return createSeededState();
+    }
+
+    let state = loadState();
+    let firedHouseReminders = {};
+    let supabaseClient = null;
+    let currentCloudUser = null;
+    let cloudSyncTimer = null;
+    let isApplyingCloudSnapshot = false;
+
+    function getCurrentDayEntry() {
+      const selDate = state.meta.selectedDate || DEFAULT_TODAY;
+      if (!state.days || typeof state.days !== 'object') {
+        state.days = {};
+      }
+      if (!state.days[selDate]) {
+        state.days[selDate] = createEmptyDayEntry(selDate);
+      } else {
+        state.days[selDate] = normalizeDayEntry(state.days[selDate], selDate);
+      }
+      return state.days[selDate];
+    }
+
+    function getSelectedYearStr() {
+      if (state && state.meta && state.meta.selectedMonthlyYear) {
+        const y = String(state.meta.selectedMonthlyYear).replace(/[^0-9]/g, '').slice(0, 4);
+        if (y.length === 4) return y;
+      }
+      const baseMonth = (state && state.meta && state.meta.selectedMonth) || getCurrentMonthYm(DEFAULT_TODAY);
+      const y2 = String(baseMonth).replace(/[^0-9]/g, '').slice(0, 4);
+      return y2.length === 4 ? y2 : String(new Date().getFullYear());
+    }
+
+    function getJournalYearStr() {
+      if (state && state.meta && state.meta.selectedJournalYear) {
+        const y = String(state.meta.selectedJournalYear).replace(/[^0-9]/g, '').slice(0, 4);
+        if (y.length === 4) return y;
+      }
+      const dStr = (state && state.meta && state.meta.selectedDate) || DEFAULT_TODAY;
+      const y2 = String(dStr).replace(/[^0-9]/g, '').slice(0, 4);
+      return y2.length === 4 ? y2 : String(new Date().getFullYear());
+    }
+
+    function getMonthListForYm(ym) {
+      if (!state.monthlyTasks || typeof state.monthlyTasks !== 'object') {
+        state.monthlyTasks = {};
+      }
+      if (!Array.isArray(state.monthlyTasks[ym])) {
+        state.monthlyTasks[ym] = [];
+      }
+      return state.monthlyTasks[ym];
+    }
+
+    function getNextMonthYm(ym) {
+      const parts = String(ym || '').split('-').map(Number);
+      if (parts.length !== 2 || !parts[0] || !parts[1]) return getCurrentMonthYm();
+      const d = new Date(parts[0], parts[1], 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    // =========================================================================
+    // 2. Local Cache + Persistent Session + Silent Background Cloud Sync
+    // =========================================================================
+    function saveState() {
+      state.updatedAt = new Date().toISOString();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        updateArchiveFooter();
+      } catch (e) {
+        console.error('Failed to save state:', e);
+      }
+      if (!isApplyingCloudSnapshot) {
+        scheduleCloudSync();
+      }
+    }
+
+    function loadSupabaseConfig() {
+      try {
+        const raw = localStorage.getItem(CLOUD_CONFIG_KEY);
+        if (raw) {
+          const cfg = JSON.parse(raw);
+          return {
+            url: String((cfg && cfg.url) || '').trim(),
+            anonKey: String((cfg && cfg.anonKey) || '').trim(),
+          };
+        }
+      } catch (e) {}
+      return { url: '', anonKey: '' };
+    }
+
+    function saveSupabaseConfig() {
+      const urlEl = document.getElementById('sbUrlInput');
+      const keyEl = document.getElementById('sbAnonKeyInput');
+      const url = ((urlEl && urlEl.value) || '').trim();
+      const anonKey = ((keyEl && keyEl.value) || '').trim();
+      localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify({ url, anonKey }));
+      initSupabaseClient(true);
+      showToast('配置已保存', url && anonKey ? '已开启后台自动云端同步' : '已切换为纯本地模式', '☁️');
+    }
+
+    function toggleCloudDrawer() {
+      const panel = document.getElementById('cloudSyncPanel');
+      if (!panel) return;
+      panel.classList.toggle('hidden');
+      const cfg = loadSupabaseConfig();
+      const urlEl = document.getElementById('sbUrlInput');
+      const keyEl = document.getElementById('sbAnonKeyInput');
+      if (urlEl && !urlEl.value) urlEl.value = cfg.url;
+      if (keyEl && !keyEl.value) keyEl.value = cfg.anonKey;
+    }
+
+    function handleDrawerBackdropClick(event) {
+      if (event && event.target && event.target.id === 'cloudSyncPanel') {
+        toggleCloudDrawer();
+      }
+    }
+
+    function updateCloudUiStatus(text, tone = 'neutral') {
+      const badge = document.getElementById('cloudStatusBadge');
+      const accLabel = document.getElementById('cloudAccountLabel');
+      const pill = document.getElementById('headerSyncPill');
+      if (badge) {
+        badge.textContent = text;
+        badge.className =
+          tone === 'ok'
+            ? 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sage/15 text-sage'
+            : tone === 'warn'
+            ? 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-terracotta/15 text-terracotta'
+            : 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-linen text-ink-700';
+      }
+      if (accLabel) {
+        accLabel.textContent = currentCloudUser
+          ? `已保持登录：${currentCloudUser.email || currentCloudUser.id}`
+          : '未登录云端账号';
+      }
+      if (pill) {
+        pill.textContent = currentCloudUser ? `☁ ${text}` : '本地已存';
+        pill.className =
+          tone === 'ok'
+            ? 'px-2.5 py-1.5 rounded-2xl bg-sage/10 border border-sage/30 text-[11px] font-semibold text-sage hover:bg-sage/15 transition shrink-0'
+            : tone === 'warn'
+            ? 'px-2.5 py-1.5 rounded-2xl bg-terracotta/10 border border-terracotta/30 text-[11px] font-semibold text-terracotta hover:bg-terracotta/15 transition shrink-0'
+            : 'px-2.5 py-1.5 rounded-2xl bg-white border border-linen text-[11px] font-semibold text-ink-500 hover:bg-linen/60 transition shrink-0';
+      }
+    }
+
+    async function initSupabaseClient(autoPull = true) {
+      const cfg = loadSupabaseConfig();
+      const urlEl = document.getElementById('sbUrlInput');
+      const keyEl = document.getElementById('sbAnonKeyInput');
+      if (urlEl) urlEl.value = cfg.url;
+      if (keyEl) keyEl.value = cfg.anonKey;
+
+      if (!cfg.url || !cfg.anonKey || !window.supabase || typeof window.supabase.createClient !== 'function') {
+        supabaseClient = null;
+        currentCloudUser = null;
+        updateCloudUiStatus('本地模式', 'neutral');
+        return;
+      }
+
+      try {
+        supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+          },
+        });
+        const { data } = await supabaseClient.auth.getSession();
+        currentCloudUser = (data && data.session && data.session.user) || null;
+        if (currentCloudUser) {
+          updateCloudUiStatus('自动同步中', 'ok');
+          if (autoPull) await pullStateFromCloud(false);
+        } else {
+          updateCloudUiStatus('本地已存', 'neutral');
+        }
+
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+          const prevUserId = currentCloudUser ? currentCloudUser.id : null;
+          currentCloudUser = (session && session.user) || null;
+          if (currentCloudUser) {
+            updateCloudUiStatus('自动同步中', 'ok');
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || currentCloudUser.id !== prevUserId) {
+              await pullStateFromCloud(false);
+            }
+          } else {
+            updateCloudUiStatus('本地已存', 'neutral');
+          }
+        });
+      } catch (e) {
+        console.error('Supabase init error:', e);
+        updateCloudUiStatus('连接异常', 'warn');
+      }
+    }
+
+    async function signInCloudUser() {
+      if (!supabaseClient) {
+        showToast('请先保存配置', '请先填写并保存 Supabase URL 与 Anon Key', '⚠️');
+        return;
+      }
+      const email = ((document.getElementById('sbEmailInput') || {}).value || '').trim();
+      const password = ((document.getElementById('sbPasswordInput') || {}).value || '').trim();
+      if (!email || !password) {
+        showToast('信息不完整', '请输入邮箱和密码', '⚠️');
+        return;
+      }
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        showToast('登录失败', error.message || '请检查邮箱或密码', '⚠️');
+        return;
+      }
+      currentCloudUser = (data && data.user) || null;
+      updateCloudUiStatus('自动同步中', 'ok');
+      showToast('已登录并开启自动同步', `后续将自动保存 ${email}`, '☁️');
+      await pullStateFromCloud(false);
+    }
+
+    async function signUpCloudUser() {
+      if (!supabaseClient) {
+        showToast('请先保存配置', '请先填写并保存 Supabase URL 与 Anon Key', '⚠️');
+        return;
+      }
+      const email = ((document.getElementById('sbEmailInput') || {}).value || '').trim();
+      const password = ((document.getElementById('sbPasswordInput') || {}).value || '').trim();
+      if (!email || !password) {
+        showToast('信息不完整', '请输入邮箱和密码', '⚠️');
+        return;
+      }
+      const { error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        showToast('注册失败', error.message || '请稍后重试', '⚠️');
+        return;
+      }
+      showToast('注册已提交', '如需邮箱验证请先完成验证后登录', '☁️');
+    }
+
+    async function signOutCloudUser() {
+      clearTimeout(cloudSyncTimer);
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut();
+      }
+      currentCloudUser = null;
+      updateCloudUiStatus('本地已存', 'neutral');
+      showToast('已退出云端账号', '当前内容仍保存在本地', '🌿');
+    }
+
+    function scheduleCloudSync() {
+      if (!supabaseClient || !currentCloudUser) return;
+      clearTimeout(cloudSyncTimer);
+      cloudSyncTimer = setTimeout(() => {
+        syncStateToCloud(false);
+      }, 1200);
+    }
+
+    async function syncStateToCloud(notify = false) {
+      if (!supabaseClient || !currentCloudUser) {
+        if (notify) showToast('未连接云端', '请在设置中配置并登录 Supabase 账号', '⚠️');
+        return;
+      }
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        updateCloudUiStatus('离线待同步', 'neutral');
+        return;
+      }
+      try {
+        const nowIso = new Date().toISOString();
+        state.updatedAt = nowIso;
+        const { error } = await supabaseClient
+          .from('user_journal_states')
+          .upsert(
+            {
+              user_id: currentCloudUser.id,
+              state_json: state,
+              updated_at: nowIso,
+            },
+            { onConflict: 'user_id' }
+          );
+        if (error) throw error;
+        updateCloudUiStatus('已自动同步', 'ok');
+        if (notify) showToast('已同步云端', '最新记录已保存到云端', '☁️');
+      } catch (e) {
+        console.error('Cloud upsert error:', e);
+        updateCloudUiStatus('同步待重试', 'warn');
+        if (notify) showToast('同步失败', e.message || '请检查网络连接与 RLS', '⚠️');
+      }
+    }
+
+    async function pullStateFromCloud(notify = false) {
+      if (!supabaseClient || !currentCloudUser) {
+        if (notify) showToast('未连接云端', '请在设置中配置并登录 Supabase 账号', '⚠️');
+        return;
+      }
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        updateCloudUiStatus('离线待同步', 'neutral');
+        return;
+      }
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_journal_states')
+          .select('state_json, updated_at')
+          .eq('user_id', currentCloudUser.id)
+          .maybeSingle();
+        if (error) throw error;
+        if (data && data.state_json && typeof data.state_json === 'object') {
+          const cloudUpdated = Date.parse(data.updated_at || (data.state_json && data.state_json.updatedAt) || 0) || 0;
+          const localUpdated = Date.parse(state.updatedAt || 0) || 0;
+
+          if (!localUpdated || cloudUpdated >= localUpdated) {
+            isApplyingCloudSnapshot = true;
+            state = normalizeLoadedState(data.state_json);
+            if (data.updated_at) state.updatedAt = data.updated_at;
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {}
+            renderAll();
+            isApplyingCloudSnapshot = false;
+          } else if (localUpdated > cloudUpdated) {
+            await syncStateToCloud(false);
+          }
+          updateCloudUiStatus('已自动同步', 'ok');
+          if (notify) showToast('已拉取云端数据', '视图已更新为最新记录', '☁️');
+        } else {
+          await syncStateToCloud(false);
+        }
+      } catch (e) {
+        isApplyingCloudSnapshot = false;
+        console.error('Cloud pull error:', e);
+        updateCloudUiStatus('拉取待重试', 'warn');
+        if (notify) showToast('拉取失败', e.message || '请检查网络连接与 RLS', '⚠️');
+      }
+    }
+
+    // =========================================================================
+    // 3. Date, Health, Habit Check-in, Report Card & Journal Helpers
+    // =========================================================================
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function parseIsoDate(iso) {
+      const [y, m, d] = String(iso || DEFAULT_TODAY).split('-').map(Number);
+      return new Date(y || 2026, (m || 1) - 1, d || 1);
+    }
+
+    function formatIsoDate(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function addDaysIso(iso, deltaDays) {
+      const d = parseIsoDate(iso);
+      d.setDate(d.getDate() + deltaDays);
+      return formatIsoDate(d);
+    }
+
+    function diffDaysIso(fromIso, toIso) {
+      const a = parseIsoDate(fromIso);
+      const b = parseIsoDate(toIso);
+      return Math.round((b - a) / (1000 * 60 * 60 * 24));
+    }
+
+    function getWeekdayCn(iso) {
+      return WEEKDAY_NAMES_CN[parseIsoDate(iso).getDay()];
+    }
+
+    function getPreviousWeightInfo(currentDateStr) {
+      const daysObj = state.days || {};
+      const sortedDates = Object.keys(daysObj)
+        .filter((d) => d < currentDateStr && daysObj[d] && String(daysObj[d].weightKg || '').trim() !== '')
+        .sort();
+      if (sortedDates.length === 0) return null;
+      const lastDate = sortedDates[sortedDates.length - 1];
+      const val = parseFloat(daysObj[lastDate].weightKg);
+      if (Number.isNaN(val)) return null;
+      return { date: lastDate, weight: val };
+    }
+
+    function computeCycleInsights(selectedDateStr) {
+      const cycleLen = Math.max(20, Math.min(45, Number(state.cycle.cycleLength) || 28));
+      const lastStart = (state.cycle.lastPeriodStart || '').trim();
+      if (!lastStart) {
+        return {
+          hasStart: false,
+          cycleLen,
+          lastStart: '',
+          dayInCycle: null,
+          nextPeriodDate: '',
+          daysUntilNext: null,
+          phaseLabel: '未设起始日',
+          phaseTip: '点击「设为周期起点」或填写上次开始日期后自动推算。',
+          badgeTone: 'bg-linen text-ink-700',
+        };
+      }
+
+      const dayInCycle = diffDaysIso(lastStart, selectedDateStr) + 1;
+      const nextPeriodDate = addDaysIso(lastStart, cycleLen);
+      const daysUntilNext = diffDaysIso(selectedDateStr, nextPeriodDate);
+
+      let phaseLabel = '卵泡期';
+      let phaseTip = '精力较平稳，可按计划安排日常。';
+      let badgeTone = 'bg-sage/15 text-sage';
+
+      if (dayInCycle >= 1 && dayInCycle <= 5) {
+        phaseLabel = '经期';
+        phaseTip = '注意保暖与适度休息。';
+        badgeTone = 'bg-terracotta/15 text-terracotta';
+      } else if (dayInCycle >= cycleLen - 15 && dayInCycle <= cycleLen - 12) {
+        phaseLabel = '排卵期前后';
+        phaseTip = '注意补水与营养均衡。';
+        badgeTone = 'bg-slateblue/15 text-slateblue';
+      } else if (dayInCycle > cycleLen - 12 && dayInCycle <= cycleLen) {
+        phaseLabel = '黄体期';
+        phaseTip = '饮食宜清淡温热，注意作息。';
+        badgeTone = 'bg-amberwarm/15 text-amberwarm';
+      } else if (dayInCycle > cycleLen) {
+        phaseLabel = '已过预计经期';
+        phaseTip = `超出周期 ${dayInCycle - cycleLen} 天；如已来可点「设为周期起点」。`;
+        badgeTone = 'bg-terracotta/15 text-terracotta';
+      }
+
+      return {
+        hasStart: true,
+        cycleLen,
+        lastStart,
+        dayInCycle,
+        nextPeriodDate,
+        daysUntilNext,
+        phaseLabel,
+        phaseTip,
+        badgeTone,
+      };
+    }
+
+    function computeGiStats(selectedDateStr) {
+      const episodes = [...(state.giEpisodes || [])].sort((a, b) => a.date.localeCompare(b.date));
+      if (episodes.length === 0) {
+        return { daysSinceLast: null, countLast30: 0 };
+      }
+      const pastOrToday = episodes.filter((e) => e.date <= selectedDateStr);
+      const latest = pastOrToday.length > 0 ? pastOrToday[pastOrToday.length - 1] : episodes[episodes.length - 1];
+      const daysSinceLast = diffDaysIso(latest.date, selectedDateStr);
+      const cutoff30 = addDaysIso(selectedDateStr, -30);
+      const countLast30 = episodes.filter((e) => e.date >= cutoff30 && e.date <= selectedDateStr).length;
+      return { daysSinceLast, countLast30 };
+    }
+
+    function computeMeditationStats(selectedDateStr) {
+      const entry = getCurrentDayEntry();
+      const todaySessions = Number(entry.health.meditationSessions) || 0;
+      const todayMinutes = Number(entry.health.meditationMinutes) || 0;
+      const cutoff7 = addDaysIso(selectedDateStr, -6);
+      let weekSessions = 0;
+      let weekMinutes = 0;
+      Object.keys(state.days || {}).forEach((d) => {
+        if (d >= cutoff7 && d <= selectedDateStr) {
+          const h = (state.days[d] && state.days[d].health) || {};
+          weekSessions += Number(h.meditationSessions) || 0;
+          weekMinutes += Number(h.meditationMinutes) || 0;
+        }
+      });
+      return { todaySessions, todayMinutes, weekSessions, weekMinutes };
+    }
+
+    // Rolling 7-day & 30-day "是" counts for boredScrolling / essentialOilMassage
+    function computeDailyHabitCheckinStats(fieldKey, selectedDateStr) {
+      const cutoff7 = addDaysIso(selectedDateStr, -6);
+      const cutoff30 = addDaysIso(selectedDateStr, -29);
+      let yes7 = 0;
+      let yes30 = 0;
+      const daysObj = state.days || {};
+      Object.keys(daysObj).forEach((d) => {
+        if (d <= selectedDateStr) {
+          const h = (daysObj[d] && daysObj[d].health) || {};
+          if (h[fieldKey] === true) {
+            if (d >= cutoff30) yes30 += 1;
+            if (d >= cutoff7) yes7 += 1;
+          }
+        }
+      });
+      return { yes7, yes30 };
+    }
+
+    function setDailyHabitCheckin(fieldKey, val) {
+      const entry = getCurrentDayEntry();
+      entry.health[fieldKey] = val === 'yes' ? true : val === 'no' ? false : null;
+      saveState();
+      renderMain();
+    }
+
+    function updateDailyHabitNote(noteKey, val) {
+      const entry = getCurrentDayEntry();
+      entry.health[noteKey] = val;
+      saveState();
+    }
+
+    function getExpiryStatus(expiryDate) {
+      if (!expiryDate) {
+        return { label: '未设日期', urgent: false, badgeClass: 'bg-linen text-ink-500' };
+      }
+      const daysLeft = diffDaysIso(state.meta.selectedDate || DEFAULT_TODAY, expiryDate);
+      if (daysLeft < 0) {
+        return { label: `已过期 ${Math.abs(daysLeft)} 天`, urgent: true, badgeClass: 'bg-terracotta text-white font-bold' };
+      }
+      if (daysLeft <= 7) {
+        return { label: `剩 ${daysLeft} 天临期`, urgent: true, badgeClass: 'bg-terracotta/15 text-terracotta font-bold' };
+      }
+      if (daysLeft <= 30) {
+        return { label: `剩 ${daysLeft} 天`, urgent: false, badgeClass: 'bg-amberwarm/15 text-amberwarm font-semibold' };
+      }
+      return { label: `剩 ${daysLeft} 天`, urgent: false, badgeClass: 'bg-sage/15 text-sage font-medium' };
+    }
+
+    function generateSmartCookingPairings() {
+      const items = Array.isArray(state.pantryItems) ? state.pantryItems : [];
+      if (items.length === 0) {
+        return [
+          {
+            title: '暂无库存食材',
+            tag: '请先添加',
+            usedItems: [],
+            steps: '添加主食、豆制品、调味料或食材后，自动生成搭配建议。',
+          },
+        ];
+      }
+
+      const sorted = [...items].sort((a, b) => {
+        const da = a.expiryDate ? diffDaysIso(state.meta.selectedDate || DEFAULT_TODAY, a.expiryDate) : 999;
+        const db = b.expiryDate ? diffDaysIso(state.meta.selectedDate || DEFAULT_TODAY, b.expiryDate) : 999;
+        return da - db;
+      });
+
+      const byCat = (cat) => sorted.filter((i) => i.category === cat);
+      const staples = byCat('主食');
+      const soy = byCat('豆制品');
+      const dried = byCat('海味干货');
+      const protein = byCat('蛋白肉蛋');
+      const veggies = byCat('生鲜果蔬');
+      const spices = byCat('调味料');
+
+      const recipes = [];
+
+      if (soy.length > 0 || veggies.length > 0 || protein.length > 0) {
+        const mainA = soy[0] || protein[0] || veggies[0];
+        const mainB = veggies[0] && veggies[0].id !== mainA.id ? veggies[0] : dried[0] || soy[1];
+        const sp = spices[0];
+        const used = [mainA, mainB, sp].filter(Boolean).map((x) => `${x.name}（${x.category}）`);
+        recipes.push({
+          title: `${mainA.name.split('/')[0].trim()} + ${mainB ? mainB.name.split('/')[0].trim() : '时蔬'}家常搭配`,
+          tag: '优先临期 · 营养均衡',
+          usedItems: used,
+          steps: `结合现有${mainA.name}${mainB ? `与${mainB.name}` : ''}，使用${sp ? sp.name : '基础调味料'}少油快炒或炖煮。`,
+        });
+      }
+
+      if (staples.length > 0 || dried.length > 0) {
+        const s1 = staples[0] || dried[0];
+        const s2 = dried[0] || soy[0] || veggies[0];
+        const sp = spices[0];
+        const used = [s1, s2, sp].filter(Boolean).map((x) => `${x.name}（${x.category}）`);
+        recipes.push({
+          title: `${s1 ? s1.name.split('/')[0].trim() : '主食'}与${s2 ? s2.name.split('/')[0].trim() : '配菜'}温热组合`,
+          tag: '主食配菜建议',
+          usedItems: used,
+          steps: `搭配${s1 ? s1.name : '主食'}与${s2 ? s2.name : '配菜'}，辅以${sp ? sp.name : '清淡调味'}做成温热餐食。`,
+        });
+      }
+
+      const seed = Number(state.meta.pantryRecipeSeed) || 0;
+      if (recipes.length > 1 && seed > 0) {
+        const offset = seed % recipes.length;
+        return [...recipes.slice(offset), ...recipes.slice(0, offset)];
+      }
+      return recipes;
+    }
+
+    function parseGradeNumeric(gradeStr) {
+      const raw = String(gradeStr || '').trim();
+      if (!raw) return null;
+      const upper = raw.toUpperCase();
+      if (Object.prototype.hasOwnProperty.call(GRADE_RANK_MAP, upper)) {
+        return GRADE_RANK_MAP[upper];
+      }
+      const slashMatch = upper.match(/^(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+      if (slashMatch) {
+        const num = parseFloat(slashMatch[1]);
+        const den = parseFloat(slashMatch[2]);
+        if (!Number.isNaN(num) && !Number.isNaN(den) && den !== 0) {
+          return (num / den) * 100;
+        }
+      }
+      const numMatch = upper.match(/-?\d+(?:\.\d+)?/);
+      if (numMatch) {
+        const num = parseFloat(numMatch[0]);
+        return Number.isNaN(num) ? null : num;
+      }
+      return null;
+    }
+
+    // Backward-compatible extractor for both legacy `grades` and `metrics.{term}.{achievement,effort}`
+    function normalizeSubjectTermScore(sub, termName) {
+      const legacyGrade = (sub && sub.grades && sub.grades[termName]) || '';
+      const rawMetric = sub && sub.metrics && sub.metrics[termName];
+      if (rawMetric && typeof rawMetric === 'object') {
+        const achievement = String(rawMetric.achievement ?? legacyGrade ?? '').trim();
+        const effort = String(rawMetric.effort ?? '').trim();
+        return { achievement, effort };
+      }
+      if (typeof rawMetric === 'string' && rawMetric.trim()) {
+        return { achievement: rawMetric.trim(), effort: '' };
+      }
+      return { achievement: String(legacyGrade || '').trim(), effort: '' };
+    }
+
+    function evaluateSingleDimensionDiff(scoreA, scoreB, termB, dimLabel) {
+      const cleanA = String(scoreA || '').trim();
+      const cleanB = String(scoreB || '').trim();
+      const numA = parseGradeNumeric(cleanA);
+      const numB = parseGradeNumeric(cleanB);
+
+      if (numA !== null && numB !== null) {
+        const diff = numB - numA;
+        if (diff > 0) {
+          return {
+            status: 'improved',
+            label: `${dimLabel} ↑ 进步 (${cleanA} → ${cleanB})`,
+            badgeClass: 'bg-sage/15 text-sage font-bold',
+          };
+        }
+        if (diff === 0) {
+          return {
+            status: 'steady',
+            label: `${dimLabel} → 持平 (${cleanB})`,
+            badgeClass: 'bg-slateblue/15 text-slateblue font-semibold',
+          };
+        }
+        return {
+          status: 'attention',
+          label: `${dimLabel} ↓ 需关注 (${cleanA} → ${cleanB})`,
+          badgeClass: 'bg-terracotta/15 text-terracotta font-semibold',
+        };
+      }
+
+      if (cleanA && cleanB) {
+        if (cleanA === cleanB) {
+          return {
+            status: 'steady',
+            label: `${dimLabel} → 持平 (${cleanB})`,
+            badgeClass: 'bg-slateblue/15 text-slateblue font-semibold',
+          };
+        }
+        return {
+          status: 'changed',
+          label: `${dimLabel} 变更 (${cleanA} → ${cleanB})`,
+          badgeClass: 'bg-amberwarm/15 text-amberwarm font-semibold',
+        };
+      }
+
+      if (cleanB) {
+        return {
+          status: 'pending',
+          label: `${dimLabel} (${termB}): ${cleanB}`,
+          badgeClass: 'bg-linen text-ink-700',
+        };
+      }
+
+      return {
+        status: 'pending',
+        label: `${dimLabel}: 待录入`,
+        badgeClass: 'bg-linen text-ink-500',
+      };
+    }
+
+    function computeReportCardComparison(termA, termB) {
+      const rc = state.childReportCards || { terms: [], subjects: [] };
+      const rows = (rc.subjects || []).map((sub) => {
+        const pairA = normalizeSubjectTermScore(sub, termA);
+        const pairB = normalizeSubjectTermScore(sub, termB);
+
+        const achievementComp = evaluateSingleDimensionDiff(
+          pairA.achievement,
+          pairB.achievement,
+          termB,
+          'Achievement'
+        );
+        const effortComp = evaluateSingleDimensionDiff(
+          pairA.effort,
+          pairB.effort,
+          termB,
+          'Effort'
+        );
+
+        let overallStatus = 'pending';
+        if (achievementComp.status === 'improved' || effortComp.status === 'improved') {
+          overallStatus = 'improved';
+        } else if (achievementComp.status === 'attention' || effortComp.status === 'attention') {
+          overallStatus = 'attention';
+        } else if (achievementComp.status === 'steady' || effortComp.status === 'steady') {
+          overallStatus = 'steady';
+        }
+
+        return {
+          ...sub,
+          achA: pairA.achievement,
+          effA: pairA.effort,
+          achB: pairB.achievement,
+          effB: pairB.effort,
+          achievementComp,
+          effortComp,
+          overallStatus,
+        };
+      });
+
+      return {
+        rows,
+        improvedAchievement: rows.filter((r) => r.achievementComp.status === 'improved'),
+        improvedEffort: rows.filter((r) => r.effortComp.status === 'improved'),
+        attentionItems: rows.filter(
+          (r) => r.achievementComp.status === 'attention' || r.effortComp.status === 'attention'
+        ),
+      };
+    }
+
+    // Reads journal data from state.days[dateStr].journal with fallback to state.entries[dateStr]
+    function getCombinedJournalSourceForDate(dateStr) {
+      const dayObj = (state.days && state.days[dateStr] && state.days[dateStr].journal) || null;
+      const altObj =
+        state.entries && typeof state.entries === 'object' && state.entries[dateStr]
+          ? state.entries[dateStr].journal || state.entries[dateStr]
+          : null;
+
+      const mood = String((dayObj && dayObj.mood) || (altObj && altObj.mood) || '').trim();
+      const gratitude = String((dayObj && dayObj.gratitude) || (altObj && altObj.gratitude) || '').trim();
+      const freeText = String(
+        (dayObj && dayObj.freeText) ||
+          (altObj && (altObj.freeText || altObj.text || altObj.content)) ||
+          ''
+      ).trim();
+
+      const combinedText = [gratitude, freeText].filter(Boolean).join(' · ');
+      const hasContent = !!(combinedText || (mood && mood !== '平和'));
+      return {
+        date: dateStr,
+        mood,
+        gratitude,
+        freeText,
+        combinedText,
+        hasContent,
+      };
+    }
+
+    function getDaysInMonthIso(yearNum, monthIndexZeroBased) {
+      return new Date(yearNum, monthIndexZeroBased + 1, 0).getDate();
+    }
+
+    // =========================================================================
+    // 4. UI Event Handlers & Actions
+    // =========================================================================
+    function showToast(title, msg, icon = '🌿') {
+      const banner = document.getElementById('toastBanner');
+      if (!banner) return;
+      const titleEl = document.getElementById('toastTitle');
+      const msgEl = document.getElementById('toastMsg');
+      const iconEl = document.getElementById('toastIcon');
+      if (titleEl) titleEl.textContent = title;
+      if (msgEl) msgEl.textContent = msg;
+      if (iconEl) iconEl.textContent = icon;
+      banner.classList.remove('hidden');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        banner.classList.add('hidden');
+      }, 4500);
+    }
+
+    function hideToast() {
+      const banner = document.getElementById('toastBanner');
+      if (banner) banner.classList.add('hidden');
+    }
+
+    function setSelectedDate(newIso) {
+      if (!newIso) return;
+      state.meta.selectedDate = newIso;
+      state.meta.selectedMonth = getCurrentMonthYm(newIso);
+      state.meta.selectedMonthlyYear = getCurrentMonthYm(newIso).slice(0, 4);
+      state.meta.selectedJournalYear = String(newIso).slice(0, 4);
+      saveState();
+      renderAll();
+    }
+
+    function shiftDate(delta) {
+      setSelectedDate(addDaysIso(state.meta.selectedDate || DEFAULT_TODAY, delta));
+    }
+
+    function jumpToToday() {
+      setSelectedDate(getLocalTodayIso());
+    }
+
+    function jumpToSection(secId) {
+      const validIds = new Set(SECTIONS.map((s) => s.id));
+      state.meta.activeSection = validIds.has(secId) ? secId : 'home';
+      saveState();
+      renderAll();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleStatusFlag(key) {
+      const entry = getCurrentDayEntry();
+      if (key === 'goodEnergy') {
+        entry.status = {
+          goodEnergy: true,
+          jointDiscomfort: false,
+          piriformisTight: false,
+          busyLowSleep: false,
+        };
+      } else {
+        entry.status[key] = !entry.status[key];
+        entry.status.goodEnergy =
+          !entry.status.jointDiscomfort && !entry.status.piriformisTight && !entry.status.busyLowSleep;
+      }
+      saveState();
+      renderMain();
+    }
+
+    function updateDailyWeight(val) {
+      const entry = getCurrentDayEntry();
+      entry.weightKg = val;
+      saveState();
+      renderMain();
+    }
+
+    function markTodayPeriodStart() {
+      const entry = getCurrentDayEntry();
+      const selDate = state.meta.selectedDate || DEFAULT_TODAY;
+      entry.isPeriodDay = true;
+      state.cycle.lastPeriodStart = selDate;
+      saveState();
+      renderMain();
+      showToast('已记周期起点', `${selDate} 已设为本轮起点`, '🌸');
+    }
+
+    function toggleSelectedDayPeriod(checked) {
+      const entry = getCurrentDayEntry();
+      entry.isPeriodDay = !!checked;
+      saveState();
+      renderMain();
+    }
+
+    function updateCycleField(field, val) {
+      if (field === 'cycleLength') {
+        state.cycle.cycleLength = Math.max(20, Math.min(45, parseInt(val, 10) || 28));
+      } else if (field === 'lastPeriodStart') {
+        state.cycle.lastPeriodStart = val || '';
+      }
+      saveState();
+      renderMain();
+    }
+
+    function toggleHealthCheck(key, checked) {
+      const entry = getCurrentDayEntry();
+      entry.health.checklist[key] = !!checked;
+      saveState();
+      renderMain();
+    }
+
+    function toggleSupplementTaken(supId, checked) {
+      const entry = getCurrentDayEntry();
+      entry.health.supplementsTaken[supId] = !!checked;
+      saveState();
+      renderMain();
+    }
+
+    function addSupplementItem() {
+      const nameEl = document.getElementById('supNameNew');
+      const doseEl = document.getElementById('supDoseNew');
+      const name = ((nameEl && nameEl.value) || '').trim();
+      if (!name) return;
+      state.supplements.push({
+        id: `sup_${Date.now()}`,
+        name,
+        dosage: ((doseEl && doseEl.value) || '1粒').trim(),
+        timing: '日常',
+        stockNote: '',
+      });
+      saveState();
+      renderMain();
+    }
+
+    function deleteSupplementItem(id) {
+      state.supplements = state.supplements.filter((s) => s.id !== id);
+      saveState();
+      renderMain();
+    }
+
+    function addGiEpisode() {
+      const dateEl = document.getElementById('giDateNew');
+      const symEl = document.getElementById('giSymptomNew');
+      const trigEl = document.getElementById('giTriggerNew');
+      const date = (dateEl && dateEl.value) || state.meta.selectedDate || DEFAULT_TODAY;
+      const symptom = ((symEl && symEl.value) || '').trim() || '肠胃不适';
+      state.giEpisodes.unshift({
+        id: `gi_${Date.now()}`,
+        date,
+        symptom,
+        trigger: ((trigEl && trigEl.value) || '').trim(),
+        note: '',
+      });
+      saveState();
+      renderMain();
+    }
+
+    function deleteGiEpisode(id) {
+      state.giEpisodes = state.giEpisodes.filter((g) => g.id !== id);
+      saveState();
+      renderMain();
+    }
+
+    function adjustMeditation(deltaSessions, deltaMinutes) {
+      const entry = getCurrentDayEntry();
+      entry.health.meditationSessions = Math.max(0, (Number(entry.health.meditationSessions) || 0) + deltaSessions);
+      entry.health.meditationMinutes = Math.max(0, (Number(entry.health.meditationMinutes) || 0) + deltaMinutes);
+      saveState();
+      renderMain();
+    }
+
+    function updateMeditationNote(val) {
+      const entry = getCurrentDayEntry();
+      entry.health.meditationNote = val;
+      saveState();
+    }
+
+    function applyScheduleToToday(dayOfWeek) {
+      const item = state.weeklySchedule.find((s) => Number(s.dayOfWeek) === Number(dayOfWeek));
+      if (!item) return;
+      const entry = getCurrentDayEntry();
+      entry.exercise.actualWorkout = item.title;
+      entry.exercise.durationMin = item.duration.replace(/[^0-9]/g, '').slice(0, 2) || '30';
+      saveState();
+      renderMain();
+      showToast('已套用运动', item.title, '🏋️‍♀️');
+    }
+
+    function updateExerciseField(field, val) {
+      const entry = getCurrentDayEntry();
+      entry.exercise[field] = val;
+      saveState();
+      if (field === 'completed' || field === 'upperDumbbellKg' || field === 'lowerDumbbellKg') {
+        renderMain();
+      }
+    }
+
+    function addCareerGoalItem() {
+      const goalEl = document.getElementById('cgGoalNew');
+      const projEl = document.getElementById('cgProjectNew');
+      const goalTitle = ((goalEl && goalEl.value) || '').trim();
+      const projectTitle = ((projEl && projEl.value) || '').trim();
+      if (!goalTitle && !projectTitle) return;
+      state.careerGoals.unshift({
+        id: `cg_${Date.now()}`,
+        goalTitle: goalTitle || '提升目标',
+        projectTitle: projectTitle || '实现项目',
+        completed: false,
+      });
+      saveState();
+      renderMain();
+    }
+
+    function updateCareerGoalField(id, field, val) {
+      const item = state.careerGoals.find((g) => g.id === id);
+      if (item) {
+        item[field] = val;
+        saveState();
+        if (field === 'completed') renderMain();
+      }
+    }
+
+    function deleteCareerGoalItem(id) {
+      state.careerGoals = state.careerGoals.filter((g) => g.id !== id);
+      saveState();
+      renderMain();
+    }
+
+    function updateEnglishDaily(field, val) {
+      const entry = getCurrentDayEntry();
+      entry.english[field] = val;
+      saveState();
+    }
+
+    function addEnglishPhrase() {
+      const phEl = document.getElementById('engPhraseNew');
+      const mnEl = document.getElementById('engMeanNew');
+      const cxEl = document.getElementById('engCtxNew');
+      const phrase = ((phEl && phEl.value) || '').trim();
+      if (!phrase) return;
+      state.englishBank.unshift({
+        id: `eng_${Date.now()}`,
+        phrase,
+        meaning: ((mnEl && mnEl.value) || '').trim(),
+        context: ((cxEl && cxEl.value) || '语境').trim(),
+        mastered: false,
+      });
+      saveState();
+      renderMain();
+    }
+
+    function toggleEnglishMastered(id, checked) {
+      const item = state.englishBank.find((e) => e.id === id);
+      if (item) {
+        item.mastered = !!checked;
+        saveState();
+        renderMain();
+      }
+    }
+
+    function deleteEnglishPhrase(id) {
+      state.englishBank = state.englishBank.filter((e) => e.id !== id);
+      saveState();
+      renderMain();
+    }
+
+    function playGentleChime() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        [523.25, 659.25, 783.99].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.15);
+          gain.gain.setValueAtTime(0.06, ctx.currentTime + idx * 0.15);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.15 + 0.55);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.15);
+          osc.stop(ctx.currentTime + idx * 0.15 + 0.6);
+        });
+      } catch (e) {}
+    }
+
+    function testHouseReminderAlert() {
+      playGentleChime();
+      const first = (state.houseTasks || []).find((t) => t.reminderEnabled) || (state.houseTasks || [])[0];
+      const msg = first
+        ? `每${WEEKDAY_NAMES_CN[first.dayOfWeek]} ${first.reminderTime} · ${first.zoneTask}`
+        : '房屋整理提醒正常';
+      showToast('房屋整理提醒', msg, '🧹');
+    }
+
+    function toggleGlobalHouseReminder(enabled) {
+      state.meta.houseReminderEnabled = !!enabled;
+      saveState();
+      renderMain();
+    }
+
+    function addHouseTaskItem() {
+      const zoneEl = document.getElementById('htZoneNew');
+      const dayEl = document.getElementById('htDayNew');
+      const timeEl = document.getElementById('htTimeNew');
+      const zoneTask = ((zoneEl && zoneEl.value) || '').trim();
+      if (!zoneTask) return;
+      state.houseTasks.push({
+        id: `ht_${Date.now()}`,
+        zoneTask,
+        dayOfWeek: parseInt((dayEl && dayEl.value) || '6', 10),
+        reminderTime: (timeEl && timeEl.value) || '10:00',
+        reminderEnabled: true,
+        completedThisWeek: false,
+      });
+      saveState();
+      renderMain();
+    }
+
+    function updateHouseTaskField(id, field, val) {
+      const item = state.houseTasks.find((t) => t.id === id);
+      if (item) {
+        item[field] = field === 'dayOfWeek' ? parseInt(val, 10) : val;
+        saveState();
+        renderMain();
+      }
+    }
+
+    function resetWeeklyHouseTasks() {
+      state.houseTasks.forEach((t) => {
+        t.completedThisWeek = false;
+      });
+      saveState();
+      renderMain();
+      showToast('已重置本周整理', '本周房屋整理任务已重置', '🧹');
+    }
+
+    function deleteHouseTaskItem(id) {
+      state.houseTasks = state.houseTasks.filter((t) => t.id !== id);
+      saveState();
+      renderMain();
+    }
+
+    function checkHouseWeeklyReminders() {
+      if (!state.meta.houseReminderEnabled) return;
+      const now = new Date();
+      const dow = now.getDay();
+      const currentHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const stamp = `${now.toDateString()}_${currentHM}`;
+
+      (state.houseTasks || []).forEach((task) => {
+        if (
+          task.reminderEnabled &&
+          !task.completedThisWeek &&
+          Number(task.dayOfWeek) === dow &&
+          task.reminderTime === currentHM
+        ) {
+          const key = `${task.id}_${stamp}`;
+          if (!firedHouseReminders[key]) {
+            firedHouseReminders[key] = true;
+            playGentleChime();
+            showToast(`房屋整理提醒（${WEEKDAY_NAMES_CN[dow]} ${currentHM}）`, task.zoneTask, '🧹');
+          }
+        }
+      });
+    }
+
+    function setPantryCategoryFilter(cat) {
+      state.meta.pantryCategoryFilter = cat;
+      saveState();
+      renderMain();
+    }
+
+    function refreshPantryRecipes() {
+      state.meta.pantryRecipeSeed = ((Number(state.meta.pantryRecipeSeed) || 0) + 1) % 20;
+      saveState();
+      renderMain();
+    }
+
+    function addPantryItem() {
+      const catEl = document.getElementById('ptCatNew');
+      const nameEl = document.getElementById('ptNameNew');
+      const qtyEl = document.getElementById('ptQtyNew');
+      const locEl = document.getElementById('ptLocNew');
+      const expEl = document.getElementById('ptExpNew');
+      const name = ((nameEl && nameEl.value) || '').trim();
+      if (!name) return;
+      state.pantryItems.unshift({
+        id: `pt_${Date.now()}`,
+        category: (catEl && catEl.value) || '其他',
+        name,
+        quantity: ((qtyEl && qtyEl.value) || '1 份').trim(),
+        location: ((locEl && locEl.value) || '').trim(),
+        expiryDate: (expEl && expEl.value) || '',
+        note: '',
+      });
+      saveState();
+      renderMain();
+    }
+
+    function updatePantryField(id, field, val) {
+      const item = state.pantryItems.find((p) => p.id === id);
+      if (item) {
+        item[field] = val;
+        saveState();
+        if (field === 'category' || field === 'expiryDate') renderMain();
+      }
+    }
+
+    function deletePantryItem(id) {
+      state.pantryItems = state.pantryItems.filter((p) => p.id !== id);
+      saveState();
+      renderMain();
+    }
+
+    function setChildCompareTerms(which, val) {
+      if (which === 'A') state.meta.childCompareTermA = val;
+      if (which === 'B') state.meta.childCompareTermB = val;
+      saveState();
+      renderMain();
+    }
+
+    function addChildReportTerm() {
+      const el = document.getElementById('rcNewTermInput');
+      const termName = ((el && el.value) || '').trim();
+      if (!termName) return;
+      if (!state.childReportCards.terms.includes(termName)) {
+        state.childReportCards.terms.push(termName);
+        state.meta.childCompareTermB = termName;
+        saveState();
+        renderMain();
+      }
+    }
+
+    function addChildReportSubject() {
+      const el = document.getElementById('rcNewSubjectInput');
+      const subjName = ((el && el.value) || '').trim();
+      if (!subjName) return;
+      state.childReportCards.subjects.push({
+        id: `sub_${Date.now()}`,
+        subject: subjName,
+        grades: {},
+        metrics: {},
+        teacherNote: '',
+      });
+      saveState();
+      renderMain();
+    }
+
+    function updateChildSubjectGrade(subId, termName, val, dimension = 'achievement') {
+      const sub = state.childReportCards.subjects.find((s) => s.id === subId);
+      if (sub) {
+        const cleanVal = String(val || '').trim();
+        const existing = normalizeSubjectTermScore(sub, termName);
+        if (!sub.metrics || typeof sub.metrics !== 'object') {
+          sub.metrics = {};
+        }
+        const nextMetric = {
+          achievement: dimension === 'achievement' ? cleanVal : existing.achievement,
+          effort: dimension === 'effort' ? cleanVal : existing.effort,
+        };
+        sub.metrics[termName] = nextMetric;
+
+        if (!sub.grades || typeof sub.grades !== 'object') {
+          sub.grades = {};
+        }
+        if (dimension === 'achievement') {
+          sub.grades[termName] = cleanVal;
+        } else if (!sub.grades[termName] && nextMetric.achievement) {
+          sub.grades[termName] = nextMetric.achievement;
+        }
+        saveState();
+        renderMain();
+      }
+    }
+
+    function updateChildSubjectNote(subId, val) {
+      const sub = state.childReportCards.subjects.find((s) => s.id === subId);
+      if (sub) {
+        sub.teacherNote = val;
+        saveState();
+      }
+    }
+
+    function deleteChildSubject(subId) {
+      state.childReportCards.subjects = state.childReportCards.subjects.filter((s) => s.id !== subId);
+      saveState();
+      renderMain();
+    }
+
+    function addReadingBookItem() {
+      const titleEl = document.getElementById('bkTitleNew');
+      const actionEl = document.getElementById('bkActionNew');
+      const title = ((titleEl && titleEl.value) || '').trim();
+      if (!title) return;
+      state.readingList.unshift({
+        id: `bk_${Date.now()}`,
+        title,
+        completed: false,
+        actionProject: ((actionEl && actionEl.value) || '').trim(),
+        actionDone: false,
+      });
+      saveState();
+      renderMain();
+    }
+
+    function updateReadingBookField(id, field, val) {
+      const item = state.readingList.find((b) => b.id === id);
+      if (item) {
+        item[field] = val;
+        saveState();
+        if (field === 'completed' || field === 'actionDone') renderMain();
+      }
+    }
+
+    function deleteReadingBookItem(id) {
+      state.readingList = state.readingList.filter((b) => b.id !== id);
+      saveState();
+      renderMain();
+    }
+
+    function setSelectedMonth(ym) {
+      if (!ym) return;
+      state.meta.selectedMonth = ym;
+      state.meta.selectedMonthlyYear = String(ym).slice(0, 4);
+      saveState();
+      renderMain();
+    }
+
+    function setSelectedMonthlyYear(yearVal) {
+      const yearStr = String(yearVal || '').replace(/[^0-9]/g, '').slice(0, 4);
+      if (yearStr.length !== 4) return;
+      state.meta.selectedMonthlyYear = yearStr;
+      const curMonthPart = String(state.meta.selectedMonth || DEFAULT_MONTH).slice(5, 7) || '01';
+      state.meta.selectedMonth = `${yearStr}-${curMonthPart}`;
+      saveState();
+      renderMain();
+    }
+
+    function shiftMonthlyYear(deltaYear) {
+      const curYear = parseInt(getSelectedYearStr(), 10) || new Date().getFullYear();
+      setSelectedMonthlyYear(String(curYear + deltaYear));
+    }
+
+    function setMonthlyCategoryFilter(cat) {
+      state.meta.monthlyFilterCategory = cat;
+      saveState();
+      renderMain();
+    }
+
+    function addMonthlyTask(targetYm) {
+      const ym = targetYm || state.meta.selectedMonth || DEFAULT_MONTH;
+      const safeId = ym.replace(/[^0-9-]/g, '');
+      const titleEl = document.getElementById(`mtTitleNew_${safeId}`) || document.getElementById('mtTitleNew');
+      const catEl = document.getElementById(`mtCatNew_${safeId}`) || document.getElementById('mtCatNew');
+      const priEl = document.getElementById(`mtPriNew_${safeId}`) || document.getElementById('mtPriNew');
+      const title = ((titleEl && titleEl.value) || '').trim();
+      if (!title) return;
+      const list = getMonthListForYm(ym);
+      list.unshift({
+        id: `mt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        title,
+        category:
+          (catEl && catEl.value) ||
+          (state.meta.monthlyFilterCategory && state.meta.monthlyFilterCategory !== '全部'
+            ? state.meta.monthlyFilterCategory
+            : '其他'),
+        priority: (priEl && priEl.value) || '中',
+        completed: false,
+        note: '',
+      });
+      state.meta.selectedMonth = ym;
+      state.meta.selectedMonthlyYear = ym.slice(0, 4);
+      saveState();
+      renderMain();
+    }
+
+    function updateMonthlyTaskField(ym, id, field, val) {
+      const list = getMonthListForYm(ym);
+      const item = list.find((m) => m.id === id);
+      if (item) {
+        item[field] = val;
+        saveState();
+        if (field === 'completed' || field === 'priority' || field === 'category') renderMain();
+      }
+    }
+
+    function deleteMonthlyTask(ym, id) {
+      state.monthlyTasks[ym] = getMonthListForYm(ym).filter((m) => m.id !== id);
+      saveState();
+      renderMain();
+    }
+
+    function moveUnfinishedMonthlyToNext(sourceYm) {
+      const ym = sourceYm || state.meta.selectedMonth || DEFAULT_MONTH;
+      const nextYm = getNextMonthYm(ym);
+      const currentList = getMonthListForYm(ym);
+      const unfinished = currentList.filter((m) => !m.completed);
+      if (unfinished.length === 0) {
+        showToast('无未完成项', `${ym} 待办已全部完成`, '🗓️');
+        return;
+      }
+      const nextList = getMonthListForYm(nextYm);
+      unfinished.forEach((u) => {
+        nextList.unshift({
+          ...u,
+          id: `mt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          completed: false,
+        });
+      });
+      state.meta.selectedMonth = nextYm;
+      state.meta.selectedMonthlyYear = nextYm.slice(0, 4);
+      saveState();
+      renderMain();
+      showToast('已转入下月', `${unfinished.length} 项未完成待办已移至 ${nextYm}`, '🗓️');
+    }
+
+    function setSelectedJournalYear(yearVal) {
+      const yearStr = String(yearVal || '').replace(/[^0-9]/g, '').slice(0, 4);
+      if (yearStr.length !== 4) return;
+      state.meta.selectedJournalYear = yearStr;
+      saveState();
+      renderMain();
+    }
+
+    function shiftJournalYear(deltaYear) {
+      const curYear = parseInt(getJournalYearStr(), 10) || new Date().getFullYear();
+      setSelectedJournalYear(String(curYear + deltaYear));
+    }
+
+    function setJournalYearFilter(mode) {
+      state.meta.journalYearFilter = mode === 'written' ? 'written' : 'all';
+      saveState();
+      renderMain();
+    }
+
+    function addShoppingItem() {
+      const nameEl = document.getElementById('spNameNew');
+      const catEl = document.getElementById('spCatNew');
+      const priEl = document.getElementById('spPriNew');
+      const noteEl = document.getElementById('spNoteNew');
+      const name = ((nameEl && nameEl.value) || '').trim();
+      if (!name) return;
+      state.shoppingList.unshift({
+        id: `sp_${Date.now()}`,
+        name,
+        category: (catEl && catEl.value) || '其他',
+        priority: (priEl && priEl.value) || '中',
+        note: ((noteEl && noteEl.value) || '').trim(),
+        bought: false,
+      });
+      saveState();
+      renderMain();
+    }
+
+    function updateShoppingField(id, field, val) {
+      const item = state.shoppingList.find((s) => s.id === id);
+      if (item) {
+        item[field] = val;
+        saveState();
+        if (field === 'bought') renderMain();
+      }
+    }
+
+    function deleteShoppingItem(id) {
+      state.shoppingList = state.shoppingList.filter((s) => s.id !== id);
+      saveState();
+      renderMain();
+    }
+
+    function setShoppingFilter(type, val) {
+      if (type === 'status') state.meta.shoppingFilterStatus = val;
+      if (type === 'category') state.meta.shoppingFilterCategory = val;
+      saveState();
+      renderMain();
+    }
+
+    function updateJournalField(field, val) {
+      const entry = getCurrentDayEntry();
+      entry.journal[field] = val;
+      saveState();
+    }
+
+    function exportBackupJson() {
+      try {
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `life_journal_backup_${getLocalTodayIso()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('备份已导出', '已下载完整 JSON 备份文件', '💾');
+      } catch (e) {
+        showToast('导出失败', '请检查浏览器下载权限', '⚠️');
+      }
+    }
+
+    function importBackupJson(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed || typeof parsed !== 'object') {
+            throw new Error('Invalid JSON');
+          }
+          state = normalizeLoadedState(parsed);
+          saveState();
+          renderAll();
+          showToast('恢复成功', '已导入备份数据', '✅');
+        } catch (err) {
+          showToast('导入失败', '请选择有效的 JSON 备份文件', '⚠️');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    // =========================================================================
+    // 5. Render Functions
+    // =========================================================================
+    function renderNavTabs() {
+      const container = document.getElementById('navTabsContainer');
+      if (!container) return;
+      const active = state.meta.activeSection || 'home';
+      container.innerHTML = SECTIONS.map((sec) => {
+        const isActive = active === sec.id;
+        return `
+          <button
+            type="button"
+            onclick="jumpToSection('${sec.id}')"
+            class="px-3.5 py-2 sm:py-1.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition shrink-0 ${
+              isActive
+                ? 'bg-ink-900 text-white shadow-sm'
+                : 'bg-white text-ink-700 hover:bg-linen border border-linen'
+            }"
+          >
+            <span>${sec.icon}</span>
+            <span>${escapeHtml(sec.label)}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderHomeTopStrip(entry) {
+      const selDate = state.meta.selectedDate || DEFAULT_TODAY;
+      const prevWeight = getPreviousWeightInfo(selDate);
+      const curWeightNum = parseFloat(entry.weightKg);
+      let weightDiffHtml = '<span class="text-ink-500">未填体重</span>';
+      if (!Number.isNaN(curWeightNum) && prevWeight) {
+        const diff = (curWeightNum - prevWeight.weight).toFixed(1);
+        const sign = diff > 0 ? `+${diff}` : diff;
+        const tone = diff > 0 ? 'text-terracotta' : diff < 0 ? 'text-sage' : 'text-ink-700';
+        weightDiffHtml = `<span class="${tone} font-semibold">较 ${prevWeight.date} (${prevWeight.weight}kg) ${sign}kg</span>`;
+      } else if (prevWeight) {
+        weightDiffHtml = `<span class="text-ink-500">上次 ${prevWeight.date}: ${prevWeight.weight}kg</span>`;
+      }
+
+      const cycle = computeCycleInsights(selDate);
+      const scrollStats = computeDailyHabitCheckinStats('boredScrolling', selDate);
+      const massageStats = computeDailyHabitCheckinStats('essentialOilMassage', selDate);
+
+      return `
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-3.5 sm:gap-4">
+          <!-- 状态 -->
+          <div class="bg-white rounded-3xl p-4 sm:p-5 border border-linen shadow-card space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-bold text-ink-900">状态 · ${escapeHtml(selDate)} (${getWeekdayCn(selDate)})</span>
+              <span class="text-[11px] text-sage font-semibold shrink-0">自动保存</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              ${CHECKIN_OPTIONS.map((opt) => {
+                const active = !!(entry.status && entry.status[opt.key]);
+                return `
+                  <button
+                    type="button"
+                    onclick="toggleStatusFlag('${opt.key}')"
+                    class="p-2.5 rounded-2xl border text-left text-xs transition ${
+                      active
+                        ? 'bg-sage/15 border-sage text-ink-900 font-bold'
+                        : 'bg-ivory border-linen text-ink-700 hover:bg-linen/60'
+                    }"
+                  >
+                    <div class="flex items-center gap-1.5">
+                      <span>${opt.icon}</span>
+                      <span class="truncate">${escapeHtml(opt.label)}</span>
+                    </div>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+            <div class="pt-2 border-t border-linen flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-xs">
+              <span class="text-ink-700">
+                划手机：<strong>${entry.health.boredScrolling === true ? '是' : entry.health.boredScrolling === false ? '否' : '未填'}</strong>
+                <span class="text-[11px] text-ink-500">(7天${scrollStats.yes7}次 · 30天${scrollStats.yes30}次)</span>
+              </span>
+              <span class="text-ink-700">
+                精油按摩：<strong>${entry.health.essentialOilMassage === true ? '是' : entry.health.essentialOilMassage === false ? '否' : '未填'}</strong>
+                <span class="text-[11px] text-ink-500">(7天${massageStats.yes7}次 · 30天${massageStats.yes30}次)</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- 体重 -->
+          <div class="bg-white rounded-3xl p-4 sm:p-5 border border-linen shadow-card flex flex-col justify-between gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs sm:text-sm font-bold text-ink-900">⚖️ 体重</span>
+              <span class="text-xs text-ink-500">kg</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+              <input
+                type="number"
+                step="0.1"
+                value="${escapeHtml(entry.weightKg || '')}"
+                placeholder="例如 54.5"
+                onchange="updateDailyWeight(this.value)"
+                class="w-32 bg-ivory border border-linen rounded-xl px-3 py-2 text-sm font-bold text-ink-900"
+              />
+              <div class="text-xs">${weightDiffHtml}</div>
+            </div>
+          </div>
+
+          <!-- 经期与周期 -->
+          <div class="bg-white rounded-3xl p-4 sm:p-5 border border-linen shadow-card flex flex-col justify-between gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-bold text-ink-900">🌸 经期与周期</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs ${cycle.badgeTone}">${escapeHtml(cycle.phaseLabel)}</span>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <label class="flex items-center gap-2 font-semibold cursor-pointer py-1">
+                <input type="checkbox" ${entry.isPeriodDay ? 'checked' : ''} onchange="toggleSelectedDayPeriod(this.checked)" class="w-4 h-4 accent-terracotta" />
+                <span>经期中</span>
+              </label>
+              <button type="button" onclick="markTodayPeriodStart()" class="px-3 py-1.5 rounded-xl bg-terracotta/15 text-terracotta font-semibold">
+                设为周期起点
+              </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <label class="flex items-center justify-between sm:justify-start gap-2 text-ink-500 bg-ivory px-2.5 py-1.5 rounded-xl border border-linen">
+                <span>周期(天)</span>
+                <input type="number" min="20" max="45" value="${cycle.cycleLen}" onchange="updateCycleField('cycleLength', this.value)" class="w-16 bg-white border border-linen rounded-lg px-2 py-0.5 font-bold text-ink-900 text-right" />
+              </label>
+              <label class="flex items-center justify-between sm:justify-start gap-2 text-ink-500 bg-ivory px-2.5 py-1.5 rounded-xl border border-linen">
+                <span>起点</span>
+                <input type="date" value="${escapeHtml(cycle.lastStart)}" onchange="updateCycleField('lastPeriodStart', this.value)" class="bg-white border border-linen rounded-lg px-2 py-0.5 text-ink-900" />
+              </label>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderHealthCard(entry, isDetailed = false) {
+      const selDate = state.meta.selectedDate || DEFAULT_TODAY;
+      const todayDow = parseIsoDate(selDate).getDay();
+      const giStats = computeGiStats(selDate);
+      const medStats = computeMeditationStats(selDate);
+      const scrollStats = computeDailyHabitCheckinStats('boredScrolling', selDate);
+      const massageStats = computeDailyHabitCheckinStats('essentialOilMassage', selDate);
+      const sups = Array.isArray(state.supplements) ? state.supplements : [];
+      const takenCount = sups.filter((s) => !!(entry.health.supplementsTaken && entry.health.supplementsTaken[s.id])).length;
+
+      const checks = [
+        { key: 'balancedDiet', label: '饮食均衡' },
+        { key: 'hydration', label: '充足饮水' },
+        { key: 'eveningCare', label: '晚间放松/泡脚' },
+        { key: 'earlySleep', label: '早睡休息' },
+      ];
+
+      const scrollVal = entry.health.boredScrolling;
+      const massageVal = entry.health.essentialOilMassage;
+
+      const scrollStatusBadge =
+        scrollVal === true
+          ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-terracotta/15 text-terracotta">划手机·是</span>'
+          : scrollVal === false
+          ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-sage/15 text-sage">划手机·否</span>'
+          : '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-linen text-ink-500">划手机·未填</span>';
+
+      const massageStatusBadge =
+        massageVal === true
+          ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-sage/15 text-sage">按摩·是</span>'
+          : massageVal === false
+          ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amberwarm/15 text-amberwarm">按摩·否</span>'
+          : '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-linen text-ink-500">按摩·未填</span>';
+
+      return `
+        <article class="bg-white rounded-3xl p-4 sm:p-5 border border-linen shadow-card border-t-4 border-t-sage space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-base font-bold text-ink-900 flex items-center gap-2">
+              <span>🌿</span>
+              <span>健康</span>
+            </h3>
+            <div class="flex flex-wrap items-center gap-1.5">
+              ${scrollStatusBadge}
+              ${massageStatusBadge}
+              ${
+                isDetailed
+                  ? `<button type="button" onclick="jumpToSection('home')" class="text-xs font-semibold text-slateblue hover:underline ml-1">← 主页</button>`
+                  : `<button type="button" onclick="jumpToSection('health')" class="text-xs font-semibold text-slateblue hover:underline ml-1">详情 →</button>`
+              }
+            </div>
+          </div>
+
+          <!-- Check-ins: 是否无聊划手机 & 是否精油按摩身体 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="p-3.5 rounded-2xl bg-ivory border border-linen space-y-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs sm:text-sm font-bold text-ink-900">📱 是否无聊划手机</span>
+                <span class="text-[11px] font-semibold text-terracotta">7天 ${scrollStats.yes7} · 30天 ${scrollStats.yes30}</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1.5 text-xs">
+                <button
+                  type="button"
+                  onclick="setDailyHabitCheckin('boredScrolling', 'yes')"
+                  class="py-2 rounded-xl font-bold border transition active:scale-[0.99] ${
+                    scrollVal === true
+                      ? 'bg-terracotta text-white border-terracotta'
+                      : 'bg-white text-ink-700 border-linen hover:bg-linen/60'
+                  }"
+                >
+                  是
+                </button>
+                <button
+                  type="button"
+                  onclick="setDailyHabitCheckin('boredScrolling', 'no')"
+                  class="py-2 rounded-xl font-bold border transition active:scale-[0.99] ${
+                    scrollVal === false
+                      ? 'bg-sage text-white border-sage'
+                      : 'bg-white text-ink-700 border-linen hover:bg-linen/60'
+                  }"
+                >
+                  否
+                </button>
+                <button
+                  type="button"
+                  onclick="setDailyHabitCheckin('boredScrolling', 'unset')"
+                  class="py-2 rounded-xl font-semibold border transition active:scale-[0.99] ${
+                    scrollVal === null || scrollVal === undefined
+                      ? 'bg-ink-900 text-white border-ink-900'
+                      : 'bg-white text-ink-500 border-linen hover:bg-linen/60'
+                  }"
+                >
+                  未填
+                </button>
+              </div>
+              <input
+                type="text"
+                value="${escapeHtml(entry.health.boredScrollingNote || '')}"
+                placeholder="备注"
+                oninput="updateDailyHabitNote('boredScrollingNote', this.value)"
+                class="w-full bg-white border border-linen rounded-xl px-3 py-1.5 text-xs text-ink-800 focus:outline-none focus:border-sage"
+              />
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-ivory border border-linen space-y-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs sm:text-sm font-bold text-ink-900">🫧 是否精油按摩身体</span>
+                <span class="text-[11px] font-semibold text-sage">7天 ${massageStats.yes7} · 30天 ${massageStats.yes30}</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1.5 text-xs">
+                <button
+                  type="button"
+                  onclick="setDailyHabitCheckin('essentialOilMassage', 'yes')"
+                  class="py-2 rounded-xl font-bold border transition active:scale-[0.99] ${
+                    massageVal === true
+                      ? 'bg-sage text-white border-sage'
+                      : 'bg-white text-ink-700 border-linen hover:bg-linen/60'
+                  }"
+                >
+                  是
+                </button>
+                <button
+                  type="button"
+                  onclick="setDailyHabitCheckin('essentialOilMassage', 'no')"
+                  class="py-2 rounded-xl font-bold border transition active:scale-[0.99] ${
+                    massageVal === false
+                      ? 'bg-amberwarm text-white border-amberwarm'
+                      : 'bg-white text-ink-700 border-linen hover:bg-linen/60'
+                  }"
+                >
+                  否
+                </button>
+                <button
+                  type="button"
+                  onclick="setDailyHabitCheckin('essentialOilMassage', 'unset')"
+                  class="py-2 rounded-xl font-semibold border transition active:scale-[0.99] ${
+                    massageVal === null || massageVal === undefined
+                      ? 'bg-ink-900 text-white border-ink-900'
+                      : 'bg-white text-ink-500 border-linen hover:bg-linen/60'
+                  }"
+                >
+                  未填
+                </button>
+              </div>
+              <input
+                type="text"
+                value="${escapeHtml(entry.health.essentialOilMassageNote || '')}"
+                placeholder="精油或部位备注"
+                oninput="updateDailyHabitNote('essentialOilMassageNote', this.value)"
+                class="w-full bg-white border border-linen rounded-xl px-3 py-1.5 text-xs text-ink-800 focus:outline-none focus:border-sage"
+              />
+            </div>
+          </div>
+
+          <!-- Health Checklist -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            ${checks.map((c) => {
+              const checked = !!(entry.health.checklist && entry.health.checklist[c.key]);
+              return `
+                <label class="flex items-center gap-2 p-2.5 rounded-xl bg-ivory border border-linen text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    ${checked ? 'checked' : ''}
+                    onchange="toggleHealthCheck('${c.key}', this.checked)"
+                    class="accent-sage"
+                  />
+                  <span class="${checked ? 'line-through text-ink-500' : 'text-ink-900 font-medium'}">${escapeHtml(c.label)}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Weekly Workout Schedule & Workout -->
+          <div class="p-4 rounded-2xl bg-ivory border border-linen space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h4 class="text-xs font-bold text-ink-900">🏋️‍♀️ 每周运动安排与记录</h4>
+              <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer ${entry.exercise.completed ? 'text-sage' : 'text-ink-900'}">
+                <input type="checkbox" ${entry.exercise.completed ? 'checked' : ''} onchange="updateExerciseField('completed', this.checked)" class="w-4 h-4 accent-sage" />
+                <span>${entry.exercise.completed ? '运动已完成' : '标记运动完成'}</span>
+              </label>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-white p-3 rounded-xl border border-linen text-xs">
+              <div class="sm:col-span-5">
+                <label class="block text-[10px] text-ink-500 mb-0.5">运动项目</label>
+                <input
+                  type="text"
+                  value="${escapeHtml(entry.exercise.actualWorkout || '')}"
+                  placeholder="运动项目"
+                  oninput="updateExerciseField('actualWorkout', this.value)"
+                  class="w-full bg-ivory border border-linen rounded-lg px-2.5 py-1 font-semibold text-ink-900"
+                />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-[10px] text-ink-500 mb-0.5">时长 (分)</label>
+                <input
+                  type="number"
+                  value="${escapeHtml(entry.exercise.durationMin || '')}"
+                  placeholder="30"
+                  oninput="updateExerciseField('durationMin', this.value)"
+                  class="w-full bg-ivory border border-linen rounded-lg px-2 py-1 font-bold"
+                />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-[10px] text-ink-500 mb-0.5">上肢哑铃</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value="${entry.exercise.upperDumbbellKg ?? 2.5}"
+                  onchange="updateExerciseField('upperDumbbellKg', parseFloat(this.value) || 2.5)"
+                  class="w-full bg-ivory border border-linen rounded-lg px-2 py-1 font-bold text-slateblue"
+                />
+              </div>
+              <div class="sm:col-span-3">
+                <label class="block text-[10px] text-ink-500 mb-0.5">下肢哑铃 / 备注</label>
+                <div class="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.5"
+                    value="${entry.exercise.lowerDumbbellKg ?? 5.0}"
+                    onchange="updateExerciseField('lowerDumbbellKg', parseFloat(this.value) || 5.0)"
+                    class="w-16 bg-ivory border border-linen rounded-lg px-2 py-1 font-bold text-terracotta"
+                  />
+                  <input
+                    type="text"
+                    value="${escapeHtml(entry.exercise.note || '')}"
+                    placeholder="备注"
+                    oninput="updateExerciseField('note', this.value)"
+                    class="flex-1 bg-ivory border border-linen rounded-lg px-2 py-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
+              ${[1, 2, 3, 4, 5, 6, 0].map((dow) => {
+                const plan = state.weeklySchedule.find((w) => Number(w.dayOfWeek) === dow);
+                const isTodayDow = dow === todayDow;
+                return `
+                  <div class="p-2.5 rounded-xl border text-xs flex flex-col justify-between gap-1.5 ${
+                    isTodayDow ? 'bg-sage/10 border-sage' : 'bg-white border-linen'
+                  }">
+                    <div>
+                      <div class="flex items-center justify-between gap-1">
+                        <span class="font-bold text-ink-900">${escapeHtml(plan.dayName)} · ${escapeHtml(plan.type)}</span>
+                        ${isTodayDow ? '<span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-sage text-white">当次</span>' : ''}
+                      </div>
+                      <div class="font-bold text-slateblue mt-0.5">${escapeHtml(plan.title)}</div>
+                    </div>
+                    <div class="flex items-center justify-between pt-1 border-t border-linen">
+                      <span class="text-[11px] text-ink-500">${escapeHtml(plan.duration)}</span>
+                      <button
+                        type="button"
+                        onclick="applyScheduleToToday(${dow})"
+                        class="px-2 py-0.5 rounded-lg bg-sage/15 hover:bg-sage text-sage hover:text-white font-semibold text-[11px] transition"
+                      >
+                        套用
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Supplements + GI Discomfort + Meditation -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="p-4 rounded-2xl bg-ivory border border-linen space-y-2.5">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-ink-900">💊 保健品</h4>
+                <span class="text-[11px] font-semibold text-sage">已服 ${takenCount}/${sups.length}</span>
+              </div>
+              <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                ${sups.map((s) => {
+                  const taken = !!(entry.health.supplementsTaken && entry.health.supplementsTaken[s.id]);
+                  return `
+                    <div class="p-2 rounded-xl bg-white border border-linen text-xs flex items-center justify-between gap-2">
+                      <label class="flex items-center gap-2 cursor-pointer flex-1">
+                        <input type="checkbox" ${taken ? 'checked' : ''} onchange="toggleSupplementTaken('${s.id}', this.checked)" class="accent-sage" />
+                        <div>
+                          <div class="font-bold ${taken ? 'line-through text-ink-500' : 'text-ink-900'}">${escapeHtml(s.name)}</div>
+                          <div class="text-[11px] text-ink-500">${escapeHtml(s.dosage)} · ${escapeHtml(s.timing)}</div>
+                        </div>
+                      </label>
+                      <button type="button" onclick="deleteSupplementItem('${s.id}')" class="text-[11px] text-ink-500 hover:text-terracotta">删</button>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+              <div class="grid grid-cols-2 gap-1.5">
+                <input id="supNameNew" type="text" placeholder="名称" class="bg-white border border-linen rounded-lg px-2 py-1 text-xs" />
+                <input id="supDoseNew" type="text" placeholder="用量/时间" class="bg-white border border-linen rounded-lg px-2 py-1 text-xs" />
+                <button type="button" onclick="addSupplementItem()" class="col-span-2 py-1.5 rounded-xl bg-sage text-white text-xs font-semibold">+ 添加保健品</button>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-ivory border border-linen space-y-2.5">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-ink-900">🍵 肠胃不适</h4>
+                <span class="text-[11px] font-semibold text-terracotta">
+                  ${giStats.daysSinceLast !== null ? `距上次 ${giStats.daysSinceLast} 天` : '无记录'} · 30天内 ${giStats.countLast30} 次
+                </span>
+              </div>
+              <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                ${(state.giEpisodes || []).slice(0, 5).map((g) => `
+                  <div class="p-2 rounded-xl bg-white border border-linen text-xs flex items-center justify-between gap-2">
+                    <div>
+                      <div class="font-bold text-ink-900">${escapeHtml(g.date)} · ${escapeHtml(g.symptom)}</div>
+                      ${g.trigger ? `<div class="text-[11px] text-ink-500">${escapeHtml(g.trigger)}</div>` : ''}
+                    </div>
+                    <button type="button" onclick="deleteGiEpisode('${g.id}')" class="text-[11px] text-ink-500 hover:text-terracotta">删</button>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="grid grid-cols-2 gap-1.5">
+                <input id="giDateNew" type="date" value="${escapeHtml(selDate)}" class="bg-white border border-linen rounded-lg px-2 py-1 text-xs" />
+                <input id="giSymptomNew" type="text" placeholder="不适表现" class="bg-white border border-linen rounded-lg px-2 py-1 text-xs" />
+                <input id="giTriggerNew" type="text" placeholder="诱因/备注" class="col-span-2 bg-white border border-linen rounded-lg px-2 py-1 text-xs" />
+                <button type="button" onclick="addGiEpisode()" class="col-span-2 py-1.5 rounded-xl bg-terracotta text-white text-xs font-semibold">+ 记录不适</button>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-ivory border border-linen space-y-2.5">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-ink-900">🧘‍♀️ 静坐</h4>
+                <span class="text-[11px] font-semibold text-slateblue">近7天 ${medStats.weekSessions}次 / ${medStats.weekMinutes}分</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-center">
+                <div class="p-2.5 rounded-xl bg-white border border-linen">
+                  <div class="text-[11px] text-ink-500">本次次数</div>
+                  <div class="text-lg font-bold text-ink-900 mt-0.5">${medStats.todaySessions} 次</div>
+                  <div class="flex justify-center gap-1.5 mt-1">
+                    <button type="button" onclick="adjustMeditation(-1, 0)" class="px-2 py-0.5 rounded bg-linen text-xs font-bold">-</button>
+                    <button type="button" onclick="adjustMeditation(1, 0)" class="px-2 py-0.5 rounded bg-slateblue text-white text-xs font-bold">+1</button>
+                  </div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-white border border-linen">
+                  <div class="text-[11px] text-ink-500">本次时长</div>
+                  <div class="text-lg font-bold text-slateblue mt-0.5">${medStats.todayMinutes} 分</div>
+                  <div class="flex justify-center gap-1 mt-1">
+                    <button type="button" onclick="adjustMeditation(1, 10)" class="px-2 py-0.5 rounded bg-sage/15 text-sage text-[11px] font-bold">+10分</button>
+                    <button type="button" onclick="adjustMeditation(1, 15)" class="px-2 py-0.5 rounded bg-sage/15 text-sage text-[11px] font-bold">+15分</button>
+                  </div>
+                </div>
+              </div>
+              <input
+                type="text"
+                value="${escapeHtml(entry.health.meditationNote || '')}"
+                placeholder="静坐备注"
+                oninput="updateMeditationNote(this.value)"
+                class="w-full bg-white border border-linen rounded-xl px-2.5 py-1.5 text-xs"
+              />
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderCareerCard(isDetailed = false) {
+      const goals = Array.isArray(state.careerGoals) ? state.careerGoals : [];
+      const doneCount = goals.filter((g) => g.completed).length;
+
+      return `
+        <article class="bg-white rounded-3xl p-5 border border-linen shadow-card border-t-4 border-t-slateblue space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-ink-900 flex items-center gap-2">
+              <span>💻</span>
+              <span>职业与学习</span>
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-slateblue bg-slateblue/10 px-2.5 py-0.5 rounded-full">${doneCount}/${goals.length}</span>
+              ${
+                isDetailed
+                  ? `<button type="button" onclick="jumpToSection('home')" class="text-xs font-semibold text-slateblue hover:underline">← 主页</button>`
+                  : `<button type="button" onclick="jumpToSection('career')" class="text-xs font-semibold text-slateblue hover:underline">详情 →</button>`
+              }
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <input id="cgGoalNew" type="text" placeholder="提升目标" class="sm:col-span-5 bg-ivory border border-linen rounded-xl px-3 py-1.5 text-xs" />
+            <input id="cgProjectNew" type="text" placeholder="实现项目" class="sm:col-span-5 bg-ivory border border-linen rounded-xl px-3 py-1.5 text-xs" />
+            <button type="button" onclick="addCareerGoalItem()" class="sm:col-span-2 px-3 py-1.5 rounded-xl bg-slateblue text-white text-xs font-semibold">+ 添加</button>
+          </div>
+
+          <div class="space-y-2 ${isDetailed ? '' : 'max-h-60 overflow-y-auto pr-1'}">
+            ${goals.map((g) => `
+              <div class="p-3 rounded-2xl border text-xs space-y-2 ${g.completed ? 'bg-sage/5 border-sage/30' : 'bg-ivory border-linen'}">
+                <div class="flex items-center justify-between">
+                  <label class="flex items-center gap-2 font-bold cursor-pointer ${g.completed ? 'text-sage' : 'text-ink-900'}">
+                    <input type="checkbox" ${g.completed ? 'checked' : ''} onchange="updateCareerGoalField('${g.id}', 'completed', this.checked)" class="accent-sage" />
+                    <span>${g.completed ? '已完成' : '进行中'}</span>
+                  </label>
+                  <button type="button" onclick="deleteCareerGoalItem('${g.id}')" class="text-[11px] text-ink-500 hover:text-terracotta">删除</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value="${escapeHtml(g.goalTitle || '')}"
+                    placeholder="提升目标"
+                    onchange="updateCareerGoalField('${g.id}', 'goalTitle', this.value)"
+                    class="w-full bg-white border border-linen rounded-xl px-2.5 py-1.5 font-bold text-ink-900 ${g.completed ? 'line-through text-ink-500' : ''}"
+                  />
+                  <input
+                    type="text"
+                    value="${escapeHtml(g.projectTitle || '')}"
+                    placeholder="实现项目"
+                    onchange="updateCareerGoalField('${g.id}', 'projectTitle', this.value)"
+                    class="w-full bg-white border border-linen rounded-xl px-2.5 py-1.5 text-ink-800"
+                  />
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderEnglishCard(entry, isDetailed = false) {
+      const bank = Array.isArray(state.englishBank) ? state.englishBank : [];
+      return `
+        <article class="bg-white rounded-3xl p-5 border border-linen shadow-card border-t-4 border-t-amberwarm space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-ink-900 flex items-center gap-2">
+              <span>🗣️</span>
+              <span>英语</span>
+            </h3>
+            ${
+              isDetailed
+                ? `<button type="button" onclick="jumpToSection('home')" class="text-xs font-semibold text-slateblue hover:underline">← 主页</button>`
+                : `<button type="button" onclick="jumpToSection('english')" class="text-xs font-semibold text-slateblue hover:underline">详情 →</button>`
+            }
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-ivory p-3 rounded-2xl border border-linen text-xs">
+            <div class="sm:col-span-2">
+              <label class="block text-[10px] text-ink-500 mb-0.5">时长 (分)</label>
+              <input
+                type="number"
+                value="${escapeHtml(entry.english.minutes || '')}"
+                placeholder="20"
+                oninput="updateEnglishDaily('minutes', this.value)"
+                class="w-full bg-white border border-linen rounded-xl px-2.5 py-1.5 font-bold"
+              />
+            </div>
+            <div class="sm:col-span-5">
+              <label class="block text-[10px] text-ink-500 mb-0.5">学习内容</label>
+              <input
+                type="text"
+                value="${escapeHtml(entry.english.topic || '')}"
+                placeholder="听说读写内容"
+                oninput="updateEnglishDaily('topic', this.value)"
+                class="w-full bg-white border border-linen rounded-xl px-2.5 py-1.5"
+              />
+            </div>
+            <div class="sm:col-span-5">
+              <label class="block text-[10px] text-ink-500 mb-0.5">备注</label>
+              <input
+                type="text"
+                value="${escapeHtml(entry.english.note || '')}"
+                placeholder="备注"
+                oninput="updateEnglishDaily('note', this.value)"
+                class="w-full bg-white border border-linen rounded-xl px-2.5 py-1.5"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <input id="engPhraseNew" type="text" placeholder="英文短语/句子" class="sm:col-span-5 bg-ivory border border-linen rounded-xl px-3 py-1.5 text-xs" />
+            <input id="engMeanNew" type="text" placeholder="释义" class="sm:col-span-4 bg-ivory border border-linen rounded-xl px-3 py-1.5 text-xs" />
+            <input id="engCtxNew" type="text" placeholder="语境" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2.5 py-1.5 text-xs" />
+            <button type="button" onclick="addEnglishPhrase()" class="sm:col-span-1 px-2.5 py-1.5 rounded-xl bg-amberwarm text-white text-xs font-semibold">+ 存</button>
+          </div>
+
+          <div class="space-y-1.5 ${isDetailed ? '' : 'max-h-48 overflow-y-auto pr-1'}">
+            ${bank.map((item) => `
+              <div class="p-2.5 rounded-xl bg-ivory border border-linen text-xs flex items-center justify-between gap-2">
+                <label class="flex items-center gap-2 cursor-pointer flex-1">
+                  <input type="checkbox" ${item.mastered ? 'checked' : ''} onchange="toggleEnglishMastered('${item.id}', this.checked)" class="accent-sage" />
+                  <div>
+                    <div class="font-bold text-ink-900 ${item.mastered ? 'line-through text-ink-500' : ''}">${escapeHtml(item.phrase)}</div>
+                    <div class="text-[11px] text-ink-500">${escapeHtml(item.meaning)} · ${escapeHtml(item.context)}</div>
+                  </div>
+                </label>
+                <button type="button" onclick="deleteEnglishPhrase('${item.id}')" class="text-[11px] text-ink-500 hover:text-terracotta">删</button>
+              </div>
+            `).join('')}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderHouseCard(isDetailed = false) {
+      const tasks = Array.isArray(state.houseTasks) ? state.houseTasks : [];
+      const doneCount = tasks.filter((t) => t.completedThisWeek).length;
+      const reminderOn = !!state.meta.houseReminderEnabled;
+
+      return `
+        <article class="bg-white rounded-3xl p-5 border border-linen shadow-card border-t-4 border-t-sage space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-ink-900 flex items-center gap-2">
+              <span>🧹</span>
+              <span>家庭</span>
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-sage bg-sage/10 px-2.5 py-0.5 rounded-full">${doneCount}/${tasks.length}</span>
+              ${
+                isDetailed
+                  ? `<button type="button" onclick="jumpToSection('home')" class="text-xs font-semibold text-slateblue hover:underline">← 主页</button>`
+                  : `<button type="button" onclick="jumpToSection('house')" class="text-xs font-semibold text-slateblue hover:underline">详情 →</button>`
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-ivory border border-linen text-xs">
+            <label class="flex items-center gap-2 font-semibold cursor-pointer">
+              <input type="checkbox" ${reminderOn ? 'checked' : ''} onchange="toggleGlobalHouseReminder(this.checked)" class="accent-sage" />
+              <span>时间提醒：${reminderOn ? '已开启' : '已关闭'}</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="testHouseReminderAlert()" class="px-2.5 py-1 rounded-xl bg-white border border-linen font-semibold">试听提醒</button>
+              <button type="button" onclick="resetWeeklyHouseTasks()" class="px-2.5 py-1 rounded-xl bg-white border border-linen font-semibold text-slateblue">重置本周</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <input id="htZoneNew" type="text" placeholder="整理区域/任务" class="sm:col-span-6 bg-ivory border border-linen rounded-xl px-3 py-1.5 text-xs" />
+            <select id="htDayNew" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2 py-1.5 text-xs font-semibold">
+              ${[1, 2, 3, 4, 5, 6, 0].map((d) => `<option value="${d}" ${d === 6 ? 'selected' : ''}>每${WEEKDAY_NAMES_CN[d]}</option>`).join('')}
+            </select>
+            <input id="htTimeNew" type="time" value="10:00" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2 py-1.5 text-xs font-semibold" />
+            <button type="button" onclick="addHouseTaskItem()" class="sm:col-span-2 px-3 py-1.5 rounded-xl bg-sage text-white text-xs font-semibold">+ 添加</button>
+          </div>
+
+          <div class="space-y-2 ${isDetailed ? '' : 'max-h-56 overflow-y-auto pr-1'}">
+            ${tasks.map((t) => `
+              <div class="p-2.5 rounded-2xl border text-xs flex flex-wrap items-center justify-between gap-2 ${
+                t.completedThisWeek ? 'bg-sage/5 border-sage/30' : 'bg-ivory border-linen'
+              }">
+                <div class="flex items-center gap-2 flex-1 min-w-[160px]">
+                  <input type="checkbox" ${t.completedThisWeek ? 'checked' : ''} onchange="updateHouseTaskField('${t.id}', 'completedThisWeek', this.checked)" class="accent-sage" />
+                  <input type="text" value="${escapeHtml(t.zoneTask)}" onchange="updateHouseTaskField('${t.id}', 'zoneTask', this.value)" class="w-full bg-white border border-linen rounded-lg px-2 py-1 font-semibold ${t.completedThisWeek ? 'line-through text-ink-500' : ''}" />
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <select onchange="updateHouseTaskField('${t.id}', 'dayOfWeek', this.value)" class="bg-white border border-linen rounded-lg px-2 py-1 text-xs font-semibold text-slateblue">
+                    ${[1, 2, 3, 4, 5, 6, 0].map((d) => `<option value="${d}" ${Number(t.dayOfWeek) === d ? 'selected' : ''}>每${WEEKDAY_NAMES_CN[d]}</option>`).join('')}
+                  </select>
+                  <input type="time" value="${escapeHtml(t.reminderTime || '10:00')}" onchange="updateHouseTaskField('${t.id}', 'reminderTime', this.value)" class="bg-white border border-linen rounded-lg px-2 py-1 text-xs" />
+                  <label class="flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-linen cursor-pointer text-[11px]">
+                    <input type="checkbox" ${t.reminderEnabled ? 'checked' : ''} onchange="updateHouseTaskField('${t.id}', 'reminderEnabled', this.checked)" class="accent-sage" />
+                    <span>提醒</span>
+                  </label>
+                  <button type="button" onclick="deleteHouseTaskItem('${t.id}')" class="text-[11px] text-ink-500 hover:text-terracotta px-1">删</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderPantryCard(isDetailed = false) {
+      const items = Array.isArray(state.pantryItems) ? state.pantryItems : [];
+      const activeCat = state.meta.pantryCategoryFilter || '全部';
+      const urgentCount = items.filter((p) => getExpiryStatus(p.expiryDate).urgent).length;
+      const recipes = generateSmartCookingPairings();
+
+      const filtered = activeCat === '全部' ? items : items.filter((p) => p.category === activeCat);
+      const catsToShow =
+        activeCat === '全部'
+          ? FOOD_CATEGORIES.filter((c) => filtered.some((i) => i.category === c))
+          : [activeCat];
+
+      return `
+        <article class="bg-white rounded-3xl p-5 border border-linen shadow-card border-t-4 border-t-terracotta space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-ink-900 flex items-center gap-2">
+              <span>🫙</span>
+              <span>食物</span>
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold ${urgentCount > 0 ? 'text-terracotta bg-terracotta/15' : 'text-sage bg-sage/10'} px-2.5 py-0.5 rounded-full">
+                共 ${items.length} 项 · 临期 ${urgentCount}
+              </span>
+              ${
+                isDetailed
+                  ? `<button type="button" onclick="jumpToSection('home')" class="text-xs font-semibold text-slateblue hover:underline">← 主页</button>`
+                  : `<button type="button" onclick="jumpToSection('pantry')" class="text-xs font-semibold text-slateblue hover:underline">详情 →</button>`
+              }
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-ivory border border-linen space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-ink-900">🍲 搭配烹饪推荐</span>
+              <button type="button" onclick="refreshPantryRecipes()" class="px-3 py-1 rounded-xl bg-terracotta text-white text-xs font-semibold">换一组</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              ${recipes.slice(0, 2).map((rec) => `
+                <div class="p-3 rounded-2xl bg-white border border-linen text-xs space-y-1">
+                  <div class="font-bold text-ink-900">${escapeHtml(rec.title)}</div>
+                  <div class="text-[11px] text-slateblue">食材：${escapeHtml(rec.usedItems.join('、') || '暂无')}</div>
+                  <p class="text-[11px] text-ink-700">${escapeHtml(rec.steps)}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-1.5">
+            ${['全部', ...FOOD_CATEGORIES].map((cat) => {
+              const count = cat === '全部' ? items.length : items.filter((p) => p.category === cat).length;
+              const active = activeCat === cat;
+              return `
+                <button
+                  type="button"
+                  onclick="setPantryCategoryFilter('${cat}')"
+                  class="px-2.5 py-1 rounded-xl text-xs font-semibold transition ${
+                    active ? 'bg-ink-900 text-white' : 'bg-ivory hover:bg-linen text-ink-700 border border-linen'
+                  }"
+                >
+                  ${escapeHtml(cat)} (${count})
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-1.5">
+            <select id="ptCatNew" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2 py-1.5 text-xs font-semibold">
+              ${FOOD_CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join('')}
+            </select>
+            <input id="ptNameNew" type="text" placeholder="名称" class="sm:col-span-3 bg-ivory border border-linen rounded-xl px-2.5 py-1.5 text-xs" />
+            <input id="ptQtyNew" type="text" placeholder="数量" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2.5 py-1.5 text-xs" />
+            <input id="ptLocNew" type="text" placeholder="存放位置" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2.5 py-1.5 text-xs" />
+            <input id="ptExpNew" type="date" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2.5 py-1.5 text-xs" />
+            <button type="button" onclick="addPantryItem()" class="sm:col-span-1 px-2.5 py-1.5 rounded-xl bg-sage text-white text-xs font-semibold">+ 添</button>
+          </div>
+
+          <div class="space-y-3 ${isDetailed ? '' : 'max-h-60 overflow-y-auto pr-1'}">
+            ${catsToShow.map((cat) => {
+              const group = filtered.filter((i) => i.category === cat);
+              return `
+                <div class="space-y-1.5">
+                  <div class="text-xs font-bold text-ink-700">${escapeHtml(cat)} (${group.length})</div>
+                  ${group.map((p) => {
+                    const exp = getExpiryStatus(p.expiryDate);
+                    return `
+                      <div class="p-2.5 rounded-xl bg-ivory border border-linen text-xs flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[160px]">
+                          <input type="text" value="${escapeHtml(p.name)}" onchange="updatePantryField('${p.id}', 'name', this.value)" class="bg-white border border-linen rounded-lg px-2 py-1 font-bold" />
+                          <input type="text" value="${escapeHtml(p.quantity || '')}" onchange="updatePantryField('${p.id}', 'quantity', this.value)" class="w-20 bg-white border border-linen rounded-lg px-2 py-1" />
+                          <input type="text" value="${escapeHtml(p.location || '')}" placeholder="位置" onchange="updatePantryField('${p.id}', 'location', this.value)" class="w-24 bg-white border border-linen rounded-lg px-2 py-1" />
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                          <input type="date" value="${escapeHtml(p.expiryDate || '')}" onchange="updatePantryField('${p.id}', 'expiryDate', this.value)" class="bg-white border border-linen rounded-lg px-2 py-1 text-[11px]" />
+                          <span class="px-2 py-0.5 rounded-full text-[10px] ${exp.badgeClass}">${escapeHtml(exp.label)}</span>
+                          <button type="button" onclick="deletePantryItem('${p.id}')" class="text-[11px] text-ink-500 hover:text-terracotta px-1">删</button>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </article>
+      `;
+    }
+
+    // 孩子学习 · Report Card 对比 (Achievement & Effort comparison)
+    function renderChildCard(isDetailed = false) {
+      const rc = state.childReportCards || { terms: [], subjects: [] };
+      const terms = rc.terms && rc.terms.length ? rc.terms : ['2026 Term 1', '2026 Term 2'];
+      const termA = terms.includes(state.meta.childCompareTermA) ? state.meta.childCompareTermA : terms[0];
+      const termB = terms.includes(state.meta.childCompareTermB) ? state.meta.childCompareTermB : terms[terms.length - 1];
+      const comp = computeReportCardComparison(termA, termB);
+      const achImprovedNames = comp.improvedAchievement.map((s) => s.subject);
+      const effImprovedNames = comp.improvedEffort.map((s) => s.subject);
+      const attentionNames = comp.attentionItems.map((s) => s.subject);
+
+      return `
+        <article class="bg-white rounded-3xl p-4 sm:p-5 border border-linen shadow-card border-t-4 border-t-slateblue space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-base font-bold text-ink-900 flex items-center gap-2">
+              <span>🎒</span>
+              <span>孩子学习 · Report Card 对比</span>
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-sage bg-sage/15 px-2.5 py-0.5 rounded-full">
+                Ach 进步 ${comp.improvedAchievement.length} · Eff 进步 ${comp.improvedEffort.length}
+              </span>
+              ${
+                isDetailed
+                  ? `<button type="button" onclick="jumpToSection('home')" class="text-xs font-semibold text-slateblue hover:underline">← 主页</button>`
+                  : `<button type="button" onclick="jumpToSection('child')" class="text-xs font-semibold text-slateblue hover:underline">详情 →</button>`
+              }
+            </div>
+          </div>
+
+          <!-- Separate Achievement & Effort Summary -->
+          <div class="p-3 rounded-2xl bg-sage/10 border border-sage/30 text-xs grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div>
+              <span class="font-bold text-sage">Ach 进步：</span>
+              <span class="font-semibold text-ink-900">${achImprovedNames.length ? escapeHtml(achImprovedNames.join('、')) : '无'}</span>
+            </div>
+            <div>
+              <span class="font-bold text-slateblue">Eff 进步：</span>
+              <span class="font-semibold text-ink-900">${effImprovedNames.length ? escapeHtml(effImprovedNames.join('、')) : '无'}</span>
+            </div>
+            <div>
+              <span class="font-bold text-terracotta">需关注：</span>
+              <span class="font-semibold text-ink-900">${attentionNames.length ? escapeHtml(attentionNames.join('、')) : '无'}</span>
+            </div>
+          </div>
+
+          <!-- Term Selectors & Add Term -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-ivory p-2.5 rounded-2xl border border-linen text-xs">
+            <div class="sm:col-span-3">
+              <select onchange="setChildCompareTerms('A', this.value)" class="w-full bg-white border border-linen rounded-xl px-2.5 py-1.5 font-semibold">
+                ${terms.map((t) => `<option value="${escapeHtml(t)}" ${t === termA ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="sm:col-span-3">
+              <select onchange="setChildCompareTerms('B', this.value)" class="w-full bg-white border border-linen rounded-xl px-2.5 py-1.5 font-semibold text-slateblue">
+                ${terms.map((t) => `<option value="${escapeHtml(t)}" ${t === termB ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="sm:col-span-6 flex items-center gap-1.5">
+              <input id="rcNewTermInput" type="text" placeholder="新学期" class="flex-1 bg-white border border-linen rounded-xl px-3 py-1.5" />
+              <button type="button" onclick="addChildReportTerm()" class="px-3 py-1.5 rounded-xl bg-slateblue text-white font-semibold shrink-0">+ 学期</button>
+            </div>
+          </div>
+
+          <!-- Mobile Compact Cards (<md) -->
+          <div class="grid grid-cols-1 gap-2.5 md:hidden">
+            ${comp.rows.map((row) => `
+              <div class="p-3 rounded-2xl border text-xs space-y-2 ${row.overallStatus === 'improved' ? 'bg-sage/5 border-sage/30' : 'bg-ivory border-linen'}">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-sm font-bold text-ink-900">${escapeHtml(row.subject)}</span>
+                  <button type="button" onclick="deleteChildSubject('${row.id}')" class="text-xs text-ink-500 hover:text-terracotta px-1">删</button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="p-2 rounded-xl bg-white border border-linen space-y-1.5">
+                    <div class="text-[11px] font-bold text-ink-700">${escapeHtml(termA)}</div>
+                    <div class="grid grid-cols-2 gap-1">
+                      <input
+                        type="text"
+                        placeholder="Ach"
+                        value="${escapeHtml(row.achA)}"
+                        onchange="updateChildSubjectGrade('${row.id}', '${escapeHtml(termA)}', this.value, 'achievement')"
+                        class="w-full bg-ivory border border-linen rounded-lg px-1.5 py-1 text-center font-semibold text-ink-900"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Eff"
+                        value="${escapeHtml(row.effA)}"
+                        onchange="updateChildSubjectGrade('${row.id}', '${escapeHtml(termA)}', this.value, 'effort')"
+                        class="w-full bg-ivory border border-linen rounded-lg px-1.5 py-1 text-center text-ink-700"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="p-2 rounded-xl bg-white border border-linen space-y-1.5">
+                    <div class="text-[11px] font-bold text-slateblue">${escapeHtml(termB)}</div>
+                    <div class="grid grid-cols-2 gap-1">
+                      <input
+                        type="text"
+                        placeholder="Ach"
+                        value="${escapeHtml(row.achB)}"
+                        onchange="updateChildSubjectGrade('${row.id}', '${escapeHtml(termB)}', this.value, 'achievement')"
+                        class="w-full bg-ivory border border-linen rounded-lg px-1.5 py-1 text-center font-bold text-slateblue"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Eff"
+                        value="${escapeHtml(row.effB)}"
+                        onchange="updateChildSubjectGrade('${row.id}', '${escapeHtml(termB)}', this.value, 'effort')"
+                        class="w-full bg-ivory border border-linen rounded-lg px-1.5 py-1 text-center font-semibold text-sage"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-1">
+                  <span class="px-2 py-0.5 rounded-full text-[11px] ${row.achievementComp.badgeClass}">${escapeHtml(row.achievementComp.label)}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[11px] ${row.effortComp.badgeClass}">${escapeHtml(row.effortComp.label)}</span>
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="备注"
+                  value="${escapeHtml(row.teacherNote || '')}"
+                  onchange="updateChildSubjectNote('${row.id}', this.value)"
+                  class="w-full bg-white border border-linen rounded-xl px-2.5 py-1.5 text-xs"
+                />
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Desktop Compact Comparison Table (md+) -->
+          <div class="hidden md:block overflow-x-auto rounded-2xl border border-linen">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-linen/70 text-ink-700">
+                  <th class="py-2 px-2.5 font-bold">科目</th>
+                  <th class="py-2 px-2 font-bold">${escapeHtml(termA)} <span class="font-normal text-[10px] text-ink-500">(Ach/Eff)</span></th>
+                  <th class="py-2 px-2 font-bold">${escapeHtml(termB)} <span class="font-normal text-[10px] text-ink-500">(Ach/Eff)</span></th>
+                  <th class="py-2 px-2 font-bold">Ach 对比</th>
+                  <th class="py-2 px-2 font-bold">Eff 对比</th>
+                  <th class="py-2 px-2.5 font-bold">备注</th>
+                  <th class="py-2 px-2 text-right font-bold">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-linen">
+                ${comp.rows.map((row) => `
+                  <tr class="${row.overallStatus === 'improved' ? 'bg-sage/5' : 'bg-white'}">
+                    <td class="py-1.5 px-2.5 font-bold text-ink-900 whitespace-nowrap">${escapeHtml(row.subject)}</td>
+                    <td class="py-1.5 px-2 whitespace-nowrap">
+                      <input
+                        type="text"
+                        placeholder="Ach"
+                        value="${escapeHtml(row.achA)}"
+                        onchange="updateChildSubjectGrade('${row.id}', '${escapeHtml(termA)}', this.value, 'achievement')"
+                        class="w-12 bg-ivory border border-linen rounded-lg px-1 py-1 text-center font-semibold"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Eff"
+                        value="${escapeHtml(row.effA)}"
+                        onchange="updateChildSubjectGrade('${row.id}', '${escapeHtml(termA)}', this.value, 'effort')"
+                        class="w-12 bg-ivory border border-linen rounded-lg px-1 py-1 text-center text-ink-700 ml-1"
+                      />
+                    </td>
+                    <td class="py-1.5 px-2 whitespace-nowrap">
+                      <input
+                        type="text"
+                        placeholder="Ach"
+                        value="${escapeHtml(row.achB)}"
+                        onchange="updateChildSubjectGrade('${row.id}', '${escapeHtml(termB)}', this.value, 'achievement')"
+                        class="w-12 bg-ivory border border-linen rounded-lg px-1 py-1 text-center font-bold text-slateblue"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Eff"
+                        value="${escapeHtml(row.effB)}"
+                        onchange="updateChildSubjectGrade('${row.id}', '${escapeHtml(termB)}', this.value, 'effort')"
+                        class="w-12 bg-ivory border border-linen rounded-lg px-1 py-1 text-center font-semibold text-sage ml-1"
+                      />
+                    </td>
+                    <td class="py-1.5 px-2 whitespace-nowrap">
+                      <span class="px-2 py-0.5 rounded-full text-[11px] ${row.achievementComp.badgeClass}">${escapeHtml(row.achievementComp.label)}</span>
+                    </td>
+                    <td class="py-1.5 px-2 whitespace-nowrap">
+                      <span class="px-2 py-0.5 rounded-full text-[11px] ${row.effortComp.badgeClass}">${escapeHtml(row.effortComp.label)}</span>
+                    </td>
+                    <td class="py-1.5 px-2.5">
+                      <input type="text" value="${escapeHtml(row.teacherNote || '')}" onchange="updateChildSubjectNote('${row.id}', this.value)" class="w-full min-w-[100px] bg-ivory border border-linen rounded-lg px-2 py-1" />
+                    </td>
+                    <td class="py-1.5 px-2 text-right">
+                      <button type="button" onclick="deleteChildSubject('${row.id}')" class="text-[11px] text-ink-500 hover:text-terracotta">删</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input id="rcNewSubjectInput" type="text" placeholder="新科目" class="flex-1 bg-ivory border border-linen rounded-xl px-3 py-1.5 text-xs" />
+            <button type="button" onclick="addChildReportSubject()" class="px-3.5 py-1.5 rounded-xl bg-ink-900 text-white text-xs font-semibold shrink-0">+ 科目</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderReadingCard(isDetailed = false) {
+      const books = Array.isArray(state.readingList) ? state.readingList : [];
+      const doneBooks = books.filter((b) => b.completed).length;
+
+      return `
+        <article class="bg-white rounded-3xl p-5 border border-linen shadow-card border-t-4 border-t-sage space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-ink-900 flex items-center gap-2">
+              <span>📚</span>
+              <span>阅读</span>
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-sage bg-sage/10 px-2.5 py-0.5 rounded-full">完成 ${doneBooks}/${books.length}</span>
+              ${
+                isDetailed
+                  ? `<button type="button" onclick="jumpToSection('home')" class="text-xs font-semibold text-slateblue hover:underline">← 主页</button>`
+                  : `<button type="button" onclick="jumpToSection('reading')" class="text-xs font-semibold text-slateblue hover:underline">详情 →</button>`
+              }
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <input id="bkTitleNew" type="text" placeholder="书名" class="sm:col-span-4 bg-ivory border border-linen rounded-xl px-3 py-1.5 text-xs" />
+            <input id="bkActionNew" type="text" placeholder="书本心得可实践项目" class="sm:col-span-6 bg-ivory border border-linen rounded-xl px-3 py-1.5 text-xs" />
+            <button type="button" onclick="addReadingBookItem()" class="sm:col-span-2 px-3 py-1.5 rounded-xl bg-sage text-white text-xs font-semibold">+ 添加</button>
+          </div>
+
+          <div class="space-y-2 ${isDetailed ? '' : 'max-h-56 overflow-y-auto pr-1'}">
+            ${books.map((b) => `
+              <div class="p-3 rounded-2xl border text-xs space-y-2 ${b.completed ? 'bg-sage/5 border-sage/30' : 'bg-ivory border-linen'}">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2 flex-1">
+                    <label class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border cursor-pointer font-semibold shrink-0 ${
+                      b.completed ? 'bg-sage text-white border-sage' : 'bg-white text-ink-700 border-linen'
+                    }">
+                      <input type="checkbox" ${b.completed ? 'checked' : ''} onchange="updateReadingBookField('${b.id}', 'completed', this.checked)" />
+                      <span>${b.completed ? '已完成' : '未完成'}</span>
+                    </label>
+                    <input type="text" value="${escapeHtml(b.title)}" onchange="updateReadingBookField('${b.id}', 'title', this.value)" class="w-full bg-white border border-linen rounded-xl px-2.5 py-1 font-bold ${b.completed ? 'line-through text-ink-500' : ''}" />
+                  </div>
+                  <button type="button" onclick="deleteReadingBookItem('${b.id}')" class="text-[11px] text-ink-500 hover:text-terracotta">删</button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <label class="flex items-center gap-1.5 text-[11px] font-semibold text-slateblue cursor-pointer shrink-0">
+                    <input type="checkbox" ${b.actionDone ? 'checked' : ''} onchange="updateReadingBookField('${b.id}', 'actionDone', this.checked)" class="accent-slateblue" />
+                    <span>可实践项目</span>
+                  </label>
+                  <input type="text" value="${escapeHtml(b.actionProject || '')}" placeholder="可实践项目" onchange="updateReadingBookField('${b.id}', 'actionProject', this.value)" class="flex-1 bg-white border border-linen rounded-xl px-2.5 py-1 text-ink-800 ${b.actionDone ? 'line-through text-ink-500' : ''}" />
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </article>
+      `;
+    }
+
+    // 每月待办 (Year selector YYYY + 12-month simultaneous grid YYYY-01 ~ YYYY-12)
+    function renderMonthlyCard(isDetailed = false) {
+      const selectedYear = getSelectedYearStr();
+      const activeMonth = state.meta.selectedMonth || DEFAULT_MONTH;
+      const filterCat = state.meta.monthlyFilterCategory || '全部';
+      const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+      const yearMonths = monthNames.map((label, idx) => {
+        const mm = String(idx + 1).padStart(2, '0');
+        const ym = `${selectedYear}-${mm}`;
+        const rawList = getMonthListForYm(ym);
+        const filteredList = filterCat === '全部' ? rawList : rawList.filter((m) => m.category === filterCat);
+        const totalCount = rawList.length;
+        const doneCount = rawList.filter((m) => m.completed).length;
+        return { ym, mm, label, rawList, filteredList, totalCount, doneCount };
+      });
+
+      const yearTotal = yearMonths.reduce((sum, m) => sum + m.totalCount, 0);
+      const yearDone = yearMonths.reduce((sum, m) => sum + m.doneCount, 0);
+
+      if (!isDetailed) {
+        const curObj = yearMonths.find((m) => m.ym === activeMonth) || yearMonths[0];
+        return `
+          <article class="bg-white rounded-3xl p-4 sm:p-5 border border-linen shadow-card border-t-4 border-t-slateblue space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <h3 class="text-base font-bold text-ink-900 flex items-center gap-2">
+                  <span>🗓️</span>
+                  <span>每月待办</span>
+                </h3>
+                <input
+                  type="month"
+                  value="${escapeHtml(curObj.ym)}"
+                  onchange="setSelectedMonth(this.value)"
+                  class="bg-ivory border border-linen rounded-xl px-2.5 py-1 text-xs font-bold text-ink-900"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-slateblue bg-slateblue/10 px-2.5 py-0.5 rounded-full">
+                  ${curObj.label} ${curObj.doneCount}/${curObj.totalCount} · 全年 ${yearDone}/${yearTotal}
+                </span>
+                <button type="button" onclick="jumpToSection('monthly')" class="text-xs font-semibold text-slateblue hover:underline">
+                  12个月同屏 →
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <input id="mtTitleNew" type="text" placeholder="添加 ${escapeHtml(curObj.label)} 待办..." class="sm:col-span-6 bg-ivory border border-linen rounded-xl px-3 py-2 text-xs" />
+              <select id="mtCatNew" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2.5 py-2 text-xs font-semibold">
+                ${MONTHLY_CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join('')}
+              </select>
+              <select id="mtPriNew" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2.5 py-2 text-xs font-semibold">
+                ${PRIORITIES.map((p) => `<option value="${p}">${p}</option>`).join('')}
+              </select>
+              <button type="button" onclick="addMonthlyTask('${curObj.ym}')" class="sm:col-span-2 px-3 py-2 rounded-xl bg-slateblue text-white text-xs font-semibold">+ 添加</button>
+            </div>
+
+            <div class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+              ${curObj.filteredList.map((m) => `
+                <div class="p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 ${
+                  m.completed ? 'bg-sage/5 border-sage/30' : 'bg-ivory border-linen'
+                }">
+                  <label class="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+                    <input type="checkbox" ${m.completed ? 'checked' : ''} onchange="updateMonthlyTaskField('${curObj.ym}', '${m.id}', 'completed', this.checked)" class="w-4 h-4 accent-sage shrink-0" />
+                    <span class="font-bold truncate ${m.completed ? 'line-through text-ink-500' : 'text-ink-900'}">${escapeHtml(m.title)}</span>
+                    <span class="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] bg-white border border-linen shrink-0">${escapeHtml(m.category)}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] shrink-0 ${
+                      m.priority === '高' ? 'bg-terracotta/15 text-terracotta font-bold' : 'bg-linen text-ink-700'
+                    }">${escapeHtml(m.priority)}</span>
+                  </label>
+                  <button type="button" onclick="deleteMonthlyTask('${curObj.ym}', '${m.id}')" class="text-xs text-ink-500 hover:text-terracotta px-1">删</button>
+                </div>
+              `).join('')}
+            </div>
+          </article>
+        `;
+      }
+
+      return `
+        <article class="bg-white rounded-3xl p-4 sm:p-5 border border-linen shadow-card border-t-4 border-t-slateblue space-y-4 sm:space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-2.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="text-base font-bold text-ink-900 flex items-center gap-2">
+                <span>🗓️</span>
+                <span>每月待办 · 十二个月同屏</span>
+              </h3>
+              <div class="flex items-center bg-ivory border border-linen rounded-xl p-0.5">
+                <button type="button" onclick="shiftMonthlyYear(-1)" class="px-2.5 py-1 text-xs font-bold text-ink-700 hover:bg-linen rounded-lg">◀</button>
+                <input
+                  type="number"
+                  min="2000"
+                  max="2099"
+                  value="${escapeHtml(selectedYear)}"
+                  onchange="setSelectedMonthlyYear(this.value)"
+                  class="w-16 bg-transparent text-center text-xs font-bold text-ink-900 focus:outline-none"
+                />
+                <span class="text-xs font-bold text-ink-700 pr-1.5">年</span>
+                <button type="button" onclick="shiftMonthlyYear(1)" class="px-2.5 py-1 text-xs font-bold text-ink-700 hover:bg-linen rounded-lg">▶</button>
+              </div>
+              <span class="text-xs font-semibold text-slateblue bg-slateblue/10 px-2.5 py-1 rounded-full">
+                ${escapeHtml(selectedYear)} 年完成 ${yearDone}/${yearTotal}
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="moveUnfinishedMonthlyToNext('${activeMonth}')" class="px-3 py-1.5 rounded-xl bg-linen hover:bg-sage/15 text-ink-900 text-xs font-semibold">
+                未完转下月 (${escapeHtml(activeMonth)})
+              </button>
+              <button type="button" onclick="jumpToSection('home')" class="text-xs font-semibold text-slateblue hover:underline">
+                ← 主页
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+            ${['全部', ...MONTHLY_CATEGORIES].map((cat) => {
+              const active = filterCat === cat;
+              return `
+                <button
+                  type="button"
+                  onclick="setMonthlyCategoryFilter('${cat}')"
+                  class="px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 ${
+                    active ? 'bg-ink-900 text-white' : 'bg-ivory border border-linen text-ink-700'
+                  }"
+                >
+                  ${escapeHtml(cat)}
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- 12 Months Simultaneous Grid (YYYY-01 ~ YYYY-12) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            ${yearMonths.map((mObj) => {
+              const isSelectedMonth = mObj.ym === activeMonth;
+              const safeYmId = mObj.ym.replace(/[^0-9-]/g, '');
+              return `
+                <section class="rounded-2xl border p-3 flex flex-col justify-between gap-2 transition ${
+                  isSelectedMonth ? 'bg-ivory border-slateblue' : 'bg-ivory/70 border-linen'
+                }">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between gap-1.5 pb-1.5 border-b border-linen">
+                      <button
+                        type="button"
+                        onclick="setSelectedMonth('${mObj.ym}')"
+                        class="text-left flex items-center gap-1.5"
+                      >
+                        <span class="text-xs sm:text-sm font-bold text-ink-900">${escapeHtml(mObj.label)}</span>
+                        <span class="text-[11px] text-ink-500">${escapeHtml(mObj.ym)}</span>
+                      </button>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                        mObj.totalCount > 0 && mObj.doneCount === mObj.totalCount
+                          ? 'bg-sage/15 text-sage'
+                          : 'bg-white text-slateblue border border-linen'
+                      }">
+                        ${mObj.doneCount}/${mObj.totalCount}
+                      </span>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <input
+                        id="mtTitleNew_${safeYmId}"
+                        type="text"
+                        placeholder="新增待办..."
+                        onkeydown="if(event.key==='Enter'){event.preventDefault();addMonthlyTask('${mObj.ym}');}"
+                        class="flex-1 min-w-0 bg-white border border-linen rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-slateblue"
+                      />
+                      <select id="mtCatNew_${safeYmId}" class="bg-white border border-linen rounded-xl px-1.5 py-1.5 text-[11px] font-semibold">
+                        ${MONTHLY_CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join('')}
+                      </select>
+                      <select id="mtPriNew_${safeYmId}" class="bg-white border border-linen rounded-xl px-1.5 py-1.5 text-[11px] font-semibold">
+                        ${PRIORITIES.map((p) => `<option value="${p}">${p}</option>`).join('')}
+                      </select>
+                      <button
+                        type="button"
+                        onclick="addMonthlyTask('${mObj.ym}')"
+                        class="px-2.5 py-1.5 rounded-xl bg-slateblue text-white text-xs font-semibold shrink-0"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <div class="space-y-1 max-h-44 overflow-y-auto pr-0.5">
+                      ${
+                        mObj.filteredList.length === 0
+                          ? `<div class="text-[11px] text-ink-500 py-2.5 text-center bg-white/70 rounded-xl border border-dashed border-linen">暂无</div>`
+                          : mObj.filteredList.map((item) => `
+                            <div class="px-2 py-1.5 rounded-xl border text-xs flex items-center justify-between gap-1.5 ${
+                              item.completed ? 'bg-sage/5 border-sage/30' : 'bg-white border-linen'
+                            }">
+                              <input
+                                type="checkbox"
+                                ${item.completed ? 'checked' : ''}
+                                onchange="updateMonthlyTaskField('${mObj.ym}', '${item.id}', 'completed', this.checked)"
+                                class="w-3.5 h-3.5 accent-sage shrink-0"
+                              />
+                              <input
+                                type="text"
+                                value="${escapeHtml(item.title)}"
+                                onchange="updateMonthlyTaskField('${mObj.ym}', '${item.id}', 'title', this.value)"
+                                class="flex-1 min-w-0 bg-transparent font-medium text-xs focus:bg-ivory focus:px-1 focus:rounded ${
+                                  item.completed ? 'line-through text-ink-500' : 'text-ink-900'
+                                }"
+                              />
+                              <span class="px-1.5 py-0.5 rounded-full text-[10px] shrink-0 ${
+                                item.priority === '高' ? 'bg-terracotta/15 text-terracotta font-bold' : 'bg-linen text-ink-700'
+                              }">${escapeHtml(item.priority)}</span>
+                              <button
+                                type="button"
+                                onclick="deleteMonthlyTask('${mObj.ym}', '${item.id}')"
+                                title="删除"
+                                class="text-[11px] text-ink-500 hover:text-terracotta px-1 shrink-0"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          `).join('')
+                      }
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between pt-1.5 border-t border-linen text-[11px] text-ink-500">
+                    <span>${mObj.doneCount}/${mObj.totalCount}</span>
+                    <button
+                      type="button"
+                      onclick="moveUnfinishedMonthlyToNext('${mObj.ym}')"
+                      class="text-slateblue hover:underline font-semibold"
+                    >
+                      转下月 →
+                    </button>
+                  </div>
+                </section>
+              `;
+            }).join('')}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderShoppingCard(isDetailed = false) {
+      const list = Array.isArray(state.shoppingList) ? state.shoppingList : [];
+      const statusFilter = state.meta.shoppingFilterStatus || 'all';
+      const catFilter = state.meta.shoppingFilterCategory || '全部';
+
+      const filtered = list.filter((s) => {
+        if (statusFilter === 'pending' && s.bought) return false;
+        if (statusFilter === 'bought' && !s.bought) return false;
+        if (catFilter !== '全部' && s.category !== catFilter) return false;
+        return true;
+      });
+
+      const pendingCount = list.filter((s) => !s.bought).length;
+
+      return `
+        <article class="bg-white rounded-3xl p-5 border border-linen shadow-card border-t-4 border-t-amberwarm space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-ink-900 flex items-center gap-2">
+              <span>🛒</span>
+              <span>购买清单</span>
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-amberwarm bg-amberwarm/15 px-2.5 py-0.5 rounded-full">待购 ${pendingCount}</span>
+              ${
+                isDetailed
+                  ? `<button type="button" onclick="jumpToSection('home')" class="text-xs font-semibold text-slateblue hover:underline">← 主页</button>`
+                  : `<button type="button" onclick="jumpToSection('shopping')" class="text-xs font-semibold text-slateblue hover:underline">详情 →</button>`
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-1.5">
+              ${[
+                { id: 'all', label: '全部' },
+                { id: 'pending', label: '待购' },
+                { id: 'bought', label: '已购' },
+              ].map((st) => `
+                <button
+                  type="button"
+                  onclick="setShoppingFilter('status', '${st.id}')"
+                  class="px-2.5 py-1 rounded-xl font-semibold ${
+                    statusFilter === st.id ? 'bg-ink-900 text-white' : 'bg-ivory border border-linen text-ink-700'
+                  }"
+                >
+                  ${st.label}
+                </button>
+              `).join('')}
+            </div>
+            <select onchange="setShoppingFilter('category', this.value)" class="bg-ivory border border-linen rounded-xl px-2.5 py-1 text-xs font-semibold">
+              ${['全部', ...SHOPPING_CATEGORIES].map((c) => `<option value="${c}" ${catFilter === c ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <input id="spNameNew" type="text" placeholder="想买的东西" class="sm:col-span-4 bg-ivory border border-linen rounded-xl px-3 py-1.5 text-xs" />
+            <select id="spCatNew" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2 py-1.5 text-xs font-semibold">
+              ${SHOPPING_CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join('')}
+            </select>
+            <select id="spPriNew" class="sm:col-span-2 bg-ivory border border-linen rounded-xl px-2 py-1.5 text-xs font-semibold">
+              ${PRIORITIES.map((p) => `<option value="${p}">${p}</option>`).join('')}
+            </select>
+            <input id="spNoteNew" type="text" placeholder="备注" class="sm:col-span-3 bg-ivory border border-linen rounded-xl px-2.5 py-1.5 text-xs" />
+            <button type="button" onclick="addShoppingItem()" class="sm:col-span-1 px-2.5 py-1.5 rounded-xl bg-amberwarm text-white text-xs font-semibold">+ 添</button>
+          </div>
+
+          <div class="space-y-1.5 ${isDetailed ? '' : 'max-h-56 overflow-y-auto pr-1'}">
+            ${filtered.map((s) => `
+              <div class="p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 ${
+                s.bought ? 'bg-sage/5 border-sage/30' : 'bg-ivory border-linen'
+              }">
+                <label class="flex items-center gap-2 cursor-pointer flex-1">
+                  <input type="checkbox" ${s.bought ? 'checked' : ''} onchange="updateShoppingField('${s.id}', 'bought', this.checked)" class="accent-sage" />
+                  <span class="font-bold ${s.bought ? 'line-through text-ink-500' : 'text-ink-900'}">${escapeHtml(s.name)}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] bg-white border border-linen">${escapeHtml(s.category)}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] ${
+                    s.priority === '高' ? 'bg-terracotta/15 text-terracotta font-bold' : 'bg-linen text-ink-700'
+                  }">${escapeHtml(s.priority)}</span>
+                  ${s.note ? `<span class="text-[11px] text-ink-500">${escapeHtml(s.note)}</span>` : ''}
+                </label>
+                <button type="button" onclick="deleteShoppingItem('${s.id}')" class="text-[11px] text-ink-500 hover:text-terracotta">删</button>
+              </div>
+            `).join('')}
+          </div>
+        </article>
+      `;
+    }
+
+    // 日记 + 全年记录 (12-month full-year overview visible on one screen)
+    function renderJournalCard(entry, isDetailed = false) {
+      const selDate = state.meta.selectedDate || DEFAULT_TODAY;
+      const journalYear = getJournalYearStr();
+      const yearNum = parseInt(journalYear, 10) || new Date().getFullYear();
+      const yearFilter = state.meta.journalYearFilter === 'written' ? 'written' : 'all';
+      const monthLabels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+      let yearWrittenDays = 0;
+      const monthsHtml = monthLabels.map((mLabel, mIdx) => {
+        const mm = String(mIdx + 1).padStart(2, '0');
+        const daysCount = getDaysInMonthIso(yearNum, mIdx);
+        const dayItems = [];
+        for (let d = 1; d <= daysCount; d += 1) {
+          const dd = String(d).padStart(2, '0');
+          const iso = `${journalYear}-${mm}-${dd}`;
+          const info = getCombinedJournalSourceForDate(iso);
+          if (info.hasContent) yearWrittenDays += 1;
+          dayItems.push({ dayNum: d, iso, info });
+        }
+
+        const monthWrittenCount = dayItems.filter((x) => x.info.hasContent).length;
+        const visibleDays =
+          yearFilter === 'written' ? dayItems.filter((x) => x.info.hasContent) : dayItems;
+        const writtenSnippets = dayItems.filter((x) => x.info.hasContent).slice(0, 2);
+
+        return `
+          <section class="rounded-2xl bg-ivory border border-linen p-2.5 sm:p-3 space-y-2">
+            <div class="flex items-center justify-between pb-1 border-b border-linen text-xs">
+              <span class="font-bold text-ink-900">
+                ${escapeHtml(mLabel)}
+                <span class="text-[11px] font-normal text-ink-500">${escapeHtml(journalYear)}-${mm}</span>
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                monthWrittenCount > 0 ? 'bg-sage/15 text-sage' : 'bg-white text-ink-500 border border-linen'
+              }">
+                ${monthWrittenCount}/${daysCount}
+              </span>
+            </div>
+
+            <div class="flex flex-wrap gap-1 max-h-36 overflow-y-auto pr-0.5">
+              ${
+                visibleDays.length === 0
+                  ? `<div class="w-full text-[11px] text-ink-500 py-2 text-center bg-white/70 rounded-xl border border-dashed border-linen">暂无已写</div>`
+                  : visibleDays.map(({ dayNum, iso, info }) => {
+                      const isSelected = iso === selDate;
+                      const tipText = info.hasContent
+                        ? `${iso}${info.mood ? ` [${info.mood}]` : ''}: ${info.combinedText || '已写'}`
+                        : `${iso} 未写`;
+                      return `
+                        <button
+                          type="button"
+                          title="${escapeHtml(tipText)}"
+                          onclick="setSelectedDate('${iso}')"
+                          class="px-2 py-1 rounded-lg border text-[11px] font-semibold transition ${
+                            isSelected
+                              ? 'bg-slateblue text-white border-slateblue'
+                              : info.hasContent
+                              ? 'bg-sage/15 text-sage border-sage/40 hover:bg-sage/25'
+                              : 'bg-white text-ink-500 border-linen hover:bg-linen/60'
+                          }"
+                        >
+                          ${dayNum}
+                        </button>
+                      `;
+                    }).join('')
+              }
+            </div>
+
+            ${
+              writtenSnippets.length > 0
+                ? `<div class="space-y-1 pt-1 border-t border-linen/80 text-[11px]">
+                    ${writtenSnippets.map((w) => `
+                      <button
+                        type="button"
+                        onclick="setSelectedDate('${w.iso}')"
+                        class="w-full text-left px-2 py-1 rounded-lg bg-white border border-linen text-ink-700 hover:border-sage truncate block"
+                      >
+                        <span class="font-bold text-sage">${w.dayNum}号</span>
+                        <span>${escapeHtml(w.info.combinedText || w.info.mood || '已写')}</span>
+                      </button>
+                    `).join('')}
+                  </div>`
+                : ''
+            }
+          </section>
+        `;
+      }).join('');
+
+      return `
+        <section class="bg-white rounded-3xl p-4 sm:p-5 border border-linen shadow-card space-y-4 sm:space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="font-editorial text-base font-bold text-ink-900">📖 日记 (${escapeHtml(selDate)})</h3>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="text-ink-500">心情</span>
+              <input
+                type="text"
+                value="${escapeHtml(entry.journal.mood || '')}"
+                onchange="updateJournalField('mood', this.value)"
+                class="w-28 bg-ivory border border-linen rounded-xl px-2.5 py-1.5 font-semibold"
+              />
+              ${
+                isDetailed
+                  ? `<button type="button" onclick="jumpToSection('home')" class="text-xs font-semibold text-slateblue hover:underline ml-1">← 主页</button>`
+                  : `<button type="button" onclick="jumpToSection('diary')" class="text-xs font-semibold text-slateblue hover:underline ml-1">独立视图 →</button>`
+              }
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block font-semibold text-ink-700 mb-1">随记 / 感恩</label>
+              <textarea
+                rows="3"
+                oninput="updateJournalField('gratitude', this.value)"
+                placeholder="写下值得留下的瞬间..."
+                class="w-full bg-ivory border border-linen rounded-2xl p-3 text-xs text-ink-900 focus:outline-none focus:border-sage"
+              >${escapeHtml(entry.journal.gratitude || '')}</textarea>
+            </div>
+            <div>
+              <label class="block font-semibold text-ink-700 mb-1">正文</label>
+              <textarea
+                rows="3"
+                oninput="updateJournalField('freeText', this.value)"
+                placeholder="自由记录..."
+                class="w-full bg-ivory border border-linen rounded-2xl p-3 text-xs text-ink-900 focus:outline-none focus:border-sage"
+              >${escapeHtml(entry.journal.freeText || '')}</textarea>
+            </div>
+          </div>
+
+          <!-- 全年记录 (12 Months Full-Year Overview on One Screen) -->
+          <div class="pt-4 border-t border-linen space-y-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <h4 class="text-sm font-bold text-ink-900">🗓️ 全年记录</h4>
+                <div class="flex items-center bg-ivory border border-linen rounded-xl p-0.5">
+                  <button type="button" onclick="shiftJournalYear(-1)" class="px-2.5 py-1 text-xs font-bold text-ink-700 hover:bg-linen rounded-lg">◀</button>
+                  <input
+                    type="number"
+                    min="2000"
+                    max="2099"
+                    value="${escapeHtml(journalYear)}"
+                    onchange="setSelectedJournalYear(this.value)"
+                    class="w-16 bg-transparent text-center text-xs font-bold text-ink-900 focus:outline-none"
+                  />
+                  <span class="text-xs font-bold text-ink-700 pr-1.5">年</span>
+                  <button type="button" onclick="shiftJournalYear(1)" class="px-2.5 py-1 text-xs font-bold text-ink-700 hover:bg-linen rounded-lg">▶</button>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-sage/15 text-sage">
+                  ${escapeHtml(journalYear)} 年已写 ${yearWrittenDays} 天
+                </span>
+              </div>
+
+              <div class="flex items-center gap-1.5 text-xs">
+                <button
+                  type="button"
+                  onclick="setJournalYearFilter('all')"
+                  class="px-3 py-1.5 rounded-xl font-semibold ${
+                    yearFilter === 'all' ? 'bg-ink-900 text-white' : 'bg-ivory border border-linen text-ink-700'
+                  }"
+                >
+                  全部
+                </button>
+                <button
+                  type="button"
+                  onclick="setJournalYearFilter('written')"
+                  class="px-3 py-1.5 rounded-xl font-semibold ${
+                    yearFilter === 'written' ? 'bg-sage text-white' : 'bg-ivory border border-linen text-ink-700'
+                  }"
+                >
+                  仅已写
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-3.5">
+              ${monthsHtml}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderMain() {
+      const main = document.getElementById('mainContainer');
+      if (!main) return;
+
+      try {
+        const entry = getCurrentDayEntry();
+        const active = state.meta.activeSection || 'home';
+
+        if (active === 'home') {
+          main.innerHTML = `
+            ${renderHomeTopStrip(entry)}
+            ${renderHealthCard(entry, false)}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              ${renderCareerCard(false)}
+              ${renderEnglishCard(entry, false)}
+              ${renderHouseCard(false)}
+              ${renderPantryCard(false)}
+            </div>
+            ${renderChildCard(false)}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              ${renderReadingCard(false)}
+              ${renderMonthlyCard(false)}
+            </div>
+            ${renderShoppingCard(false)}
+            ${renderJournalCard(entry, false)}
+          `;
+        } else if (active === 'health') {
+          main.innerHTML = `${renderHomeTopStrip(entry)}${renderHealthCard(entry, true)}`;
+        } else if (active === 'career') {
+          main.innerHTML = renderCareerCard(true);
+        } else if (active === 'english') {
+          main.innerHTML = renderEnglishCard(entry, true);
+        } else if (active === 'house') {
+          main.innerHTML = renderHouseCard(true);
+        } else if (active === 'pantry') {
+          main.innerHTML = renderPantryCard(true);
+        } else if (active === 'child') {
+          main.innerHTML = renderChildCard(true);
+        } else if (active === 'reading') {
+          main.innerHTML = renderReadingCard(true);
+        } else if (active === 'monthly') {
+          main.innerHTML = renderMonthlyCard(true);
+        } else if (active === 'diary') {
+          main.innerHTML = renderJournalCard(entry, true);
+        } else if (active === 'shopping') {
+          main.innerHTML = renderShoppingCard(true);
+        } else {
+          state.meta.activeSection = 'home';
+          main.innerHTML = `
+            ${renderHomeTopStrip(entry)}
+            ${renderHealthCard(entry, false)}
+            ${renderJournalCard(entry, false)}
+          `;
+        }
+      } catch (err) {
+        console.error('Render error:', err);
+        main.innerHTML = `
+          <div class="bg-white rounded-3xl p-6 border border-linen shadow-card space-y-3 text-xs">
+            <div class="text-sm font-bold text-terracotta">视图渲染遇到异常，已启用安全恢复</div>
+            <p class="text-ink-700">${escapeHtml(err && err.message ? err.message : '未知渲染错误')}</p>
+            <button type="button" onclick="jumpToSection('home')" class="px-3 py-1.5 rounded-xl bg-sage text-white font-semibold">返回主页</button>
+          </div>
+        `;
+      }
+    }
+
+    function updateArchiveFooter() {
+      const count = Object.keys(state.days || {}).length;
+      const el = document.getElementById('archiveStatsText');
+      if (el) el.textContent = `已归档：${count} 天`;
+    }
+
+    function renderAll() {
+      const picker = document.getElementById('headerDatePicker');
+      if (picker) picker.value = state.meta.selectedDate || DEFAULT_TODAY;
+      renderNavTabs();
+      renderMain();
+      updateArchiveFooter();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+      initSupabaseClient(true);
+      checkHouseWeeklyReminders();
+      setInterval(checkHouseWeeklyReminders, 20000);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && supabaseClient && currentCloudUser) {
+        pullStateFromCloud(false);
+      }
+    });
+
+    window.addEventListener('online', () => {
+      if (supabaseClient && currentCloudUser) {
+        pullStateFromCloud(false);
+      }
+    });
+  </script>
+</body>
+</html>
