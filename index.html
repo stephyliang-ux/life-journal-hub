@@ -32,7 +32,6 @@
       color: var(--ink-primary);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
       line-height: 1.5;
-      overflow-x: hidden;
     }
 
     .no-scrollbar::-webkit-scrollbar {
@@ -43,7 +42,6 @@
       scrollbar-width: none;
     }
 
-    /* Optional 390x844 mobile frame preview on desktop */
     @media (min-width: 640px) {
       body.mobile-frame-mode {
         background-color: #EAE4DA;
@@ -100,7 +98,7 @@
     <header class="sticky top-0 z-30 bg-[#FAF7F2]/95 backdrop-blur-sm border-b border-[#E6DFD3] px-3 pt-2.5 pb-2">
       <div class="flex items-center justify-between mb-2 px-1">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-semibold tracking-tight text-[#2B2623]" id="header-date-label"></span>
+          <span class="text-sm font-semibold tracking-tight text-[#2B2623]" id="header-date-label">2026-11-25</span>
           <span id="sync-status-dot" class="inline-block w-2 h-2 rounded-full bg-[#B5ABA0]" title="Local storage active"></span>
         </div>
         <button
@@ -109,7 +107,6 @@
           onclick="toggleMobileFrame()"
           class="hidden sm:inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-[#E6DFD3] bg-[#FFFCF7] text-[#786E65] hover:text-[#2B2623]"
           title="Toggle 390x844 Mobile Frame Preview"
-          aria-label="Toggle 390x844 Mobile Frame Preview"
         >
           📱 Mobile Frame
         </button>
@@ -124,12 +121,9 @@
 
     <!-- Bottom Footer: Achievements + Date Navigation + Utility & Cloud Controls -->
     <footer class="px-3.5 pt-2 pb-5 space-y-2.5 border-t border-[#E6DFD3] bg-[#FAF7F2]">
-      <!-- Achievements Strip (Always above footer utility bar) -->
       <div id="achievements-container"></div>
 
-      <!-- Date Navigator & Utility/Cloud Bar -->
       <div class="card px-2.5 py-2 flex flex-wrap items-center justify-between gap-1.5">
-        <!-- Date Controls -->
         <div class="flex items-center gap-1">
           <button type="button" onclick="shiftDate(-2)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="2 Days Ago" aria-label="2 Days Ago">⏪</button>
           <button type="button" onclick="shiftDate(-1)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="Yesterday" aria-label="Yesterday">◀</button>
@@ -145,7 +139,6 @@
           <button type="button" onclick="shiftDate(2)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="Day After Tomorrow" aria-label="Day After Tomorrow">⏩</button>
         </div>
 
-        <!-- Settings, Cloud Sync & Backup Icons -->
         <div class="flex items-center gap-1">
           <button type="button" onclick="openModal('settings')" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Cycle & Year Settings" aria-label="Cycle and Year Settings">⚙️</button>
           <button type="button" onclick="openModal('cloud')" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Supabase Cloud Sync" aria-label="Supabase Cloud Sync">☁️</button>
@@ -162,7 +155,7 @@
     </footer>
   </div>
 
-  <!-- Modal Overlay (Settings / Cloud Sync / Quick Add / Reset) -->
+  <!-- Modal Overlay -->
   <div id="modal-backdrop" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-[1px] flex items-end sm:items-center justify-center p-3">
     <div id="modal-box" class="card w-full max-w-md p-4 bg-[#FFFCF7] max-h-[85vh] overflow-y-auto"></div>
   </div>
@@ -216,7 +209,7 @@
         healthLogs: {
           [DEFAULT_TODAY]: {
             exerciseDone: true,
-            exerciseNote: '30 min walk + stretching / 快走与拉伸',
+            exerciseNote: '30 min walk + stretching',
             meditationMinutes: 15,
             phoneControl: 'yes',
             massage: false,
@@ -227,7 +220,7 @@
         learningItems: [
           {
             id: 'learn-1',
-            title: 'Web Development & Database Module / 网页与数据库练习',
+            title: 'Web Development & Database Module',
             status: 'in_progress',
             progress: 65,
             notes: 'HTML5, CSS, Supabase sync'
@@ -237,7 +230,7 @@
           {
             id: 'fam-1',
             date: DEFAULT_TODAY,
-            title: 'Walk Cookie & tidy living room / 遛狗与整理客厅',
+            title: 'Walk Cookie & tidy living room',
             done: false
           }
         ],
@@ -245,7 +238,7 @@
           {
             id: 'clean-1',
             date: DEFAULT_TODAY,
-            task: 'Wipe kitchen rangehood & dining sideboard / 擦拭油烟机与餐边柜',
+            task: 'Wipe kitchen rangehood & dining sideboard',
             area: 'Kitchen & Dining',
             priority: 'Normal',
             notes: 'Use mild eucalyptus spray',
@@ -255,7 +248,7 @@
         readingList: [
           {
             id: 'book-1',
-            title: 'Biohack Your Brain / 大脑逆龄指南',
+            title: 'Biohack Your Brain',
             author: 'Dr. Kristen Willeumier',
             status: 'reading',
             notes: 'Chapter 3 nutrition & sleep'
@@ -265,20 +258,20 @@
           {
             id: 'todo-1',
             month: DEFAULT_TODAY.slice(0, 7),
-            title: 'Organize garden rose fertilizer schedule / 整理月季施肥计划',
+            title: 'Organize garden rose fertilizer schedule',
             done: false
           }
         ],
         diaryEntries: {
           [DEFAULT_TODAY]: {
-            content: 'Started using the streamlined Life Journal Hub today. Morning coffee, warm breeze, and calm focus.\n今天开始使用生活记录本，记录日常习惯、任务与随笔。',
+            content: 'Started using the streamlined Life Journal Hub today. Warm weather, morning coffee and a good walk.',
             updatedAt: new Date().toISOString()
           }
         },
         shoppingList: [
           {
             id: 'shop-1',
-            name: 'Fresh prawns & baby spinach / 鲜虾与嫩菠菜',
+            name: 'Fresh prawns & baby spinach',
             category: 'Groceries',
             bought: false
           }
@@ -291,6 +284,7 @@
     let expandedDiaryDates = {};
     let cleaningFilter = 'all';
     let cleaningEditId = null;
+    let activeTodoMonth = null;
     let autoSyncTimer = null;
 
     function deepMerge(target, source) {
@@ -330,7 +324,6 @@
           const parsed = JSON.parse(raw);
           const merged = deepMerge(base, parsed);
           if (!merged.selectedDate) merged.selectedDate = getLocalTodayStr();
-          if (!merged.settings.startDate) merged.settings.startDate = merged.selectedDate;
           return merged;
         }
       } catch (e) {
@@ -375,12 +368,8 @@
     }
 
     function parseYMD(dateStr) {
-      const parts = String(dateStr || '').split('-').map(Number);
-      if (parts.length === 3 && !parts.some(Number.isNaN)) {
-        return new Date(parts[0], parts[1] - 1, parts[2]);
-      }
-      const now = new Date();
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return new Date(y, m - 1, d);
     }
 
     function formatYMD(dateObj) {
@@ -394,12 +383,14 @@
       const dt = parseYMD(state.selectedDate);
       dt.setDate(dt.getDate() + days);
       state.selectedDate = formatYMD(dt);
+      activeTodoMonth = null;
       saveState(true);
       render();
     }
 
     function goToday() {
       state.selectedDate = getLocalTodayStr();
+      activeTodoMonth = null;
       saveState(true);
       render();
     }
@@ -407,6 +398,7 @@
     function setSelectedDate(val) {
       if (!val) return;
       state.selectedDate = val;
+      activeTodoMonth = null;
       saveState(true);
       render();
     }
@@ -423,7 +415,7 @@
     }
 
     function getYearDenominator(year) {
-      const startStr = (state.settings && state.settings.startDate) || DEFAULT_TODAY;
+      const startStr = state.settings.startDate || DEFAULT_TODAY;
       const startDate = parseYMD(startStr);
       const startYear = startDate.getFullYear();
       if (year === startYear) {
@@ -451,11 +443,11 @@
     }
 
     function getCycleCountdown() {
-      const cycleLen = Math.max(20, Math.min(45, Number(state.settings && state.settings.cycleLength) || 28));
+      const cycleLen = Math.max(20, Math.min(45, Number(state.settings.cycleLength) || 28));
       const periodDates = Object.keys(state.healthLogs)
         .filter(d => state.healthLogs[d] && state.healthLogs[d].periodStart && d <= state.selectedDate)
         .sort();
-      const latestStart = periodDates.length > 0 ? periodDates[periodDates.length - 1] : (state.settings && state.settings.lastPeriodDate);
+      const latestStart = periodDates.length > 0 ? periodDates[periodDates.length - 1] : state.settings.lastPeriodDate;
       if (!latestStart) return null;
       const start = parseYMD(latestStart);
       const current = parseYMD(state.selectedDate);
@@ -539,7 +531,7 @@
     function computeStreak() {
       let streak = 0;
       const cursor = parseYMD(state.selectedDate);
-      while (streak < 3660) {
+      while (true) {
         const key = formatYMD(cursor);
         if (isDayActive(key)) {
           streak++;
@@ -549,6 +541,26 @@
         }
       }
       return streak;
+    }
+
+    /* Monthly Todo Helpers */
+    function getMonthsWithTodos() {
+      const map = new Map();
+      for (const t of state.monthlyTodos) {
+        if (!t || !t.month) continue;
+        if (!map.has(t.month)) {
+          map.set(t.month, { month: t.month, total: 0, done: 0 });
+        }
+        const entry = map.get(t.month);
+        entry.total += 1;
+        if (t.done) entry.done += 1;
+      }
+      return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month));
+    }
+
+    function getCurrentTodoMonth() {
+      if (activeTodoMonth) return activeTodoMonth;
+      return state.selectedDate.slice(0, 7);
     }
 
     /* Navigation & Main Render */
@@ -639,12 +651,26 @@
       const yStats = computeYearStats(year);
       const cycleDays = getCycleCountdown();
 
+      const totalLearning = state.learningItems.length;
+      const completedLearning = state.learningItems.filter(i => i.status === 'completed').length;
       const activeLearning = state.learningItems.filter(i => i.status === 'in_progress');
+      const showLearningCard = totalLearning > 0;
+
       const todayFamily = state.familyItems.filter(i => i.date === d);
       const todayCleaning = state.specialCleaning.filter(i => i.date === d);
       const hasTodayFamily = todayFamily.length > 0 || todayCleaning.length > 0;
+      const todayTotalCount = todayFamily.length + todayCleaning.length;
+      const todayDoneCount =
+        todayFamily.filter(i => i.done).length + todayCleaning.filter(c => c.done).length;
+      const allFamilyTotalCount = state.familyItems.length + state.specialCleaning.length;
+      const allFamilyDoneCount =
+        state.familyItems.filter(i => i.done).length + state.specialCleaning.filter(c => c.done).length;
+
+      const booksTotal = state.readingList.length;
+      const booksRead = state.readingList.filter(b => b.status === 'finished').length;
 
       const currentMonth = d.slice(0, 7);
+      const monthsWithTodos = getMonthsWithTodos();
       const monthTodos = state.monthlyTodos.filter(t => t.month === currentMonth);
       const pendingShop = state.shoppingList.filter(s => !s.bought);
       const diaryText = (state.diaryEntries[d] && state.diaryEntries[d].content) || '';
@@ -661,10 +687,9 @@
                   : ''
               }
             </div>
-            <button type="button" onclick="setTab('health')" class="text-xs text-[#786E65] hover:text-[#2B2623]" aria-label="Open Health">→</button>
+            <button type="button" onclick="setTab('health')" class="text-xs text-[#786E65] hover:text-[#2B2623]">→</button>
           </div>
 
-          <!-- Exercise Row -->
           <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
             <label class="flex items-center gap-2.5 cursor-pointer select-none">
               <input
@@ -673,14 +698,13 @@
                 onchange="updateHealthField('exerciseDone', this.checked)"
                 class="w-4 h-4 accent-[#3F6250] rounded"
               />
-              <span class="text-sm font-medium">Exercise / 运动</span>
+              <span class="text-sm font-medium">Exercise</span>
             </label>
             <span class="text-xs font-medium text-[#3F6250]">${yStats.exerciseDays}/${yStats.denom}d</span>
           </div>
 
-          <!-- Meditation Minutes Input -->
           <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
-            <span class="text-sm font-medium">Meditation / 静坐</span>
+            <span class="text-sm font-medium">Meditation</span>
             <div class="flex items-center gap-1.5">
               <input
                 type="number"
@@ -696,9 +720,8 @@
             </div>
           </div>
 
-          <!-- Phone Control Dropdown -->
           <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
-            <span class="text-sm font-medium">Phone Control / 控手机</span>
+            <span class="text-sm font-medium">Phone Control</span>
             <div class="flex items-center gap-2">
               <select
                 onchange="updateHealthField('phoneControl', this.value)"
@@ -706,8 +729,8 @@
                 aria-label="Phone Control Status"
               >
                 <option value="unset" ${log.phoneControl === 'unset' ? 'selected' : ''}>—</option>
-                <option value="yes" ${log.phoneControl === 'yes' ? 'selected' : ''}>Yes / 是</option>
-                <option value="no" ${log.phoneControl === 'no' ? 'selected' : ''}>No / 否</option>
+                <option value="yes" ${log.phoneControl === 'yes' ? 'selected' : ''}>Yes</option>
+                <option value="no" ${log.phoneControl === 'no' ? 'selected' : ''}>No</option>
               </select>
               <span class="text-xs font-medium text-[#3F6250]">${yStats.phoneControlDays}/${yStats.denom}d</span>
             </div>
@@ -716,38 +739,49 @@
 
         <!-- 2. Learning Card -->
         ${
-          activeLearning.length > 0
+          showLearningCard
             ? `
           <section class="card p-3.5 space-y-2.5">
-            <div class="flex items-center justify-between">
-              <button type="button" onclick="setTab('learning')" class="text-lg leading-none" title="Learning" aria-label="Learning">📚</button>
-              <button type="button" onclick="setTab('learning')" class="text-xs text-[#786E65] hover:text-[#2B2623]" aria-label="Open Learning">→</button>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="setTab('learning')" class="text-lg leading-none" title="Learning" aria-label="Learning">📚</button>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-[#EBF1ED] text-[#3F6250]">${completedLearning}/${totalLearning} done</span>
+              </div>
+              <button type="button" onclick="setTab('learning')" class="text-xs text-[#786E65] hover:text-[#2B2623]">→</button>
             </div>
-            <div class="space-y-1.5">
-              ${activeLearning
-                .map(
-                  item => `
-                <div class="flex items-center justify-between gap-2 text-sm bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
-                  <span class="truncate">${escapeHtml(item.title)}</span>
-                  <span class="text-xs font-semibold text-[#3F6250] shrink-0">${item.progress || 0}%</span>
-                </div>
-              `
-                )
-                .join('')}
-            </div>
+            ${
+              activeLearning.length > 0
+                ? `<div class="space-y-1.5">
+                    ${activeLearning
+                      .map(
+                        item => `
+                      <div class="flex items-center justify-between gap-2 text-sm bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
+                        <span class="truncate">${escapeHtml(item.title)}</span>
+                        <span class="text-xs font-semibold text-[#3F6250] shrink-0">${item.progress || 0}%</span>
+                      </div>
+                    `
+                      )
+                      .join('')}
+                  </div>`
+                : `<p class="text-xs text-[#786E65] px-1">All ${totalLearning} learning item(s) completed.</p>`
+            }
           </section>
         `
             : ''
         }
 
-        <!-- 3. Family Card -->
+        <!-- 3. Family & Cleaning Card -->
         ${
           hasTodayFamily
             ? `
           <section class="card p-3.5 space-y-2.5">
-            <div class="flex items-center justify-between">
-              <button type="button" onclick="setTab('family')" class="text-lg leading-none" title="Family & Cleaning" aria-label="Family and Cleaning">🏡</button>
-              <button type="button" onclick="setTab('family')" class="text-xs text-[#786E65] hover:text-[#2B2623]" aria-label="Open Family">→</button>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="setTab('family')" class="text-lg leading-none" title="Family & Cleaning" aria-label="Family and Cleaning">🏡</button>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-[#EBF1ED] text-[#3F6250]">Today ${todayDoneCount}/${todayTotalCount} done</span>
+                <span class="text-[11px] text-[#786E65]">Total ${allFamilyDoneCount}/${allFamilyTotalCount}</span>
+              </div>
+              <button type="button" onclick="setTab('family')" class="text-xs text-[#786E65] hover:text-[#2B2623]">→</button>
             </div>
             <div class="space-y-1.5">
               ${todayFamily
@@ -781,8 +815,11 @@
 
         <!-- 4. Reading Card -->
         <section class="card p-3.5 space-y-2.5">
-          <div class="flex items-center justify-between">
-            <button type="button" onclick="setTab('reading')" class="text-lg leading-none" title="Reading List" aria-label="Reading List">📖</button>
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="setTab('reading')" class="text-lg leading-none" title="Reading List" aria-label="Reading List">📖</button>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-[#EBF1ED] text-[#3F6250]">${booksRead}/${booksTotal} read</span>
+            </div>
             <button type="button" onclick="openQuickAdd('reading')" class="w-7 h-7 rounded-full bg-[#EBF1ED] text-[#3F6250] flex items-center justify-center text-xs font-bold" title="Quick Add Book" aria-label="Quick Add Book">➕</button>
           </div>
           ${
@@ -794,7 +831,7 @@
                       b => `
                     <div class="flex items-center justify-between gap-2 text-sm bg-[#FAF7F2] px-3 py-1.5 rounded-xl border border-[#EDE7DC]">
                       <span class="truncate ${b.status === 'finished' ? 'line-through text-[#786E65]' : ''}">${escapeHtml(b.title)}</span>
-                      <span class="text-[11px] px-2 py-0.5 rounded-full bg-white border border-[#E6DFD3] text-[#786E65] shrink-0">${b.status === 'finished' ? 'Done' : b.status === 'reading' ? 'Reading' : 'To Read'}</span>
+                      <span class="text-[11px] px-2 py-0.5 rounded-full bg-white border border-[#E6DFD3] text-[#786E65] shrink-0">${b.status === 'finished' ? 'Read' : b.status === 'reading' ? 'Reading' : 'To Read'}</span>
                     </div>
                   `
                     )
@@ -810,6 +847,29 @@
             <button type="button" onclick="setTab('todo')" class="text-lg leading-none" title="Monthly Todo" aria-label="Monthly Todo">📅</button>
             <button type="button" onclick="openQuickAdd('todo')" class="w-7 h-7 rounded-full bg-[#EBF1ED] text-[#3F6250] flex items-center justify-center text-xs font-bold" title="Quick Add Todo" aria-label="Quick Add Todo">➕</button>
           </div>
+          ${
+            monthsWithTodos.length > 0
+              ? `<div class="flex flex-wrap gap-1.5">
+                  ${monthsWithTodos
+                    .map(
+                      m => `
+                    <button
+                      type="button"
+                      onclick="jumpToTodoMonth('${m.month}')"
+                      class="px-2.5 py-0.5 rounded-full text-[11px] border ${
+                        m.month === currentMonth
+                          ? 'bg-[#EBF1ED] border-[#3F6250] text-[#3F6250] font-semibold'
+                          : 'bg-[#FAF7F2] border-[#E6DFD3] text-[#786E65]'
+                      }"
+                    >
+                      ${m.month} (${m.done}/${m.total})
+                    </button>
+                  `
+                    )
+                    .join('')}
+                </div>`
+              : ''
+          }
           ${
             monthTodos.length > 0
               ? `<div class="space-y-1.5">
@@ -833,11 +893,11 @@
         <section class="card p-3.5 space-y-2">
           <div class="flex items-center justify-between">
             <button type="button" onclick="setTab('diary')" class="text-lg leading-none" title="Diary" aria-label="Diary">✍️</button>
-            <button type="button" onclick="setTab('diary')" class="text-xs text-[#786E65] hover:text-[#2B2623]" aria-label="Open Diary">→</button>
+            <button type="button" onclick="setTab('diary')" class="text-xs text-[#786E65] hover:text-[#2B2623]">→</button>
           </div>
           <textarea
             rows="3"
-            placeholder="Write today's note (English or 中文)..."
+            placeholder="Write today's note..."
             oninput="updateDiaryContent(this.value)"
             class="w-full p-2.5 text-sm bg-[#FAF7F2] border border-[#EDE7DC] rounded-xl resize-none"
           >${escapeHtml(diaryText)}</textarea>
@@ -904,7 +964,7 @@
               <input
                 type="text"
                 value="${escapeHtml(log.exerciseNote || '')}"
-                placeholder="Workout note / 运动备注 (e.g. 2km jog, yoga)"
+                placeholder="Workout note (e.g. 2km jog, yoga)"
                 onchange="updateHealthField('exerciseNote', this.value)"
                 class="w-full h-8 px-2.5 text-xs"
               />
@@ -929,8 +989,8 @@
               <span class="text-sm font-medium">📵 Phone Control</span>
               <select onchange="updateHealthField('phoneControl', this.value)" class="h-8 px-2.5 text-xs font-medium">
                 <option value="unset" ${log.phoneControl === 'unset' ? 'selected' : ''}>Not Set</option>
-                <option value="yes" ${log.phoneControl === 'yes' ? 'selected' : ''}>Yes / Controlled</option>
-                <option value="no" ${log.phoneControl === 'no' ? 'selected' : ''}>No / Exceeded</option>
+                <option value="yes" ${log.phoneControl === 'yes' ? 'selected' : ''}>Yes</option>
+                <option value="no" ${log.phoneControl === 'no' ? 'selected' : ''}>No</option>
               </select>
             </div>
 
@@ -996,15 +1056,21 @@
 
     /* Subpage: Learning */
     function renderLearningPage() {
+      const total = state.learningItems.length;
+      const done = state.learningItems.filter(i => i.status === 'completed').length;
+
       return `
         <div class="card p-4 space-y-3">
-          <div class="flex items-center gap-2">
-            <span class="text-xl">💻</span>
-            <h2 class="text-base font-semibold">Learning & Skills</h2>
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">💻</span>
+              <h2 class="text-base font-semibold">Learning & Skills</h2>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EBF1ED] text-[#3F6250]">${done}/${total} done</span>
           </div>
 
           <form onsubmit="addLearningItem(event)" class="space-y-2 bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC]">
-            <input type="text" id="new-learn-title" required placeholder="Course, module, or skill (English / 中文)..." class="w-full h-9 px-3 text-sm" />
+            <input type="text" id="new-learn-title" required placeholder="Course, module, or skill..." class="w-full h-9 px-3 text-sm" />
             <div class="flex gap-2">
               <select id="new-learn-status" class="h-8 px-2.5 text-xs flex-1">
                 <option value="in_progress">In Progress</option>
@@ -1061,16 +1127,22 @@
         })
         .sort((a, b) => a.date.localeCompare(b.date));
 
+      const familyDone = state.familyItems.filter(i => i.done).length;
+      const cleanDone = state.specialCleaning.filter(c => c.done).length;
+
       return `
         <div class="card p-4 space-y-3">
-          <div class="flex items-center gap-2">
-            <span class="text-xl">🏡</span>
-            <h2 class="text-base font-semibold">Family & Home Tasks</h2>
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🏡</span>
+              <h2 class="text-base font-semibold">Family & Home Tasks</h2>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EBF1ED] text-[#3F6250]">${familyDone}/${state.familyItems.length} done</span>
           </div>
 
           <form onsubmit="addFamilyItem(event)" class="flex gap-2">
             <input type="date" id="new-fam-date" value="${d}" class="h-9 px-2 text-xs" />
-            <input type="text" id="new-fam-title" required placeholder="Family task / 家庭事项..." class="flex-1 h-9 px-3 text-sm" />
+            <input type="text" id="new-fam-title" required placeholder="Family task..." class="flex-1 h-9 px-3 text-sm" />
             <button type="submit" class="px-3.5 h-9 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
           </form>
 
@@ -1097,10 +1169,11 @@
         </div>
 
         <div class="card p-4 space-y-3">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
             <div class="flex items-center gap-2">
               <span class="text-xl">🧹</span>
               <h3 class="text-base font-semibold">Scheduled Special Cleaning</h3>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-[#FBF3E6] text-[#A66E2E]">${cleanDone}/${state.specialCleaning.length} done</span>
             </div>
             <div class="flex gap-1">
               ${['all', 'upcoming', 'pending']
@@ -1128,7 +1201,7 @@
               <input type="date" id="clean-date" value="${d}" required class="h-8 px-2 text-xs" />
               <input type="text" id="clean-area" placeholder="Area (e.g. Kitchen, Balcony)" class="h-8 px-2.5 text-xs" />
             </div>
-            <input type="text" id="clean-task" required placeholder="Special cleaning task / 特别清洁任务..." class="w-full h-9 px-3 text-sm" />
+            <input type="text" id="clean-task" required placeholder="Special cleaning task..." class="w-full h-9 px-3 text-sm" />
             <div class="flex gap-2">
               <select id="clean-priority" class="h-8 px-2 text-xs">
                 <option value="Normal">Normal</option>
@@ -1191,17 +1264,23 @@
 
     /* Subpage: Reading */
     function renderReadingPage() {
+      const total = state.readingList.length;
+      const readCount = state.readingList.filter(b => b.status === 'finished').length;
+
       return `
         <div class="card p-4 space-y-3">
-          <div class="flex items-center gap-2">
-            <span class="text-xl">📚</span>
-            <h2 class="text-base font-semibold">Reading List</h2>
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">📚</span>
+              <h2 class="text-base font-semibold">Reading List</h2>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EBF1ED] text-[#3F6250]">${readCount}/${total} read</span>
           </div>
 
           <form onsubmit="addBookItem(event)" class="space-y-2 bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC]">
-            <input type="text" id="book-title" required placeholder="Book title / 书名..." class="w-full h-9 px-3 text-sm" />
+            <input type="text" id="book-title" required placeholder="Book title..." class="w-full h-9 px-3 text-sm" />
             <div class="flex gap-2">
-              <input type="text" id="book-author" placeholder="Author / 作者" class="flex-1 h-8 px-2.5 text-xs" />
+              <input type="text" id="book-author" placeholder="Author" class="flex-1 h-8 px-2.5 text-xs" />
               <select id="book-status" class="h-8 px-2 text-xs">
                 <option value="reading">Reading</option>
                 <option value="to_read">To Read</option>
@@ -1239,27 +1318,68 @@
 
     /* Subpage: Monthly Todo */
     function renderTodoPage() {
-      const currentMonth = state.selectedDate.slice(0, 7);
-      const list = state.monthlyTodos.filter(t => t.month === currentMonth);
+      const targetMonth = getCurrentTodoMonth();
+      const monthsWithPlans = getMonthsWithTodos();
+      const list = state.monthlyTodos.filter(t => t.month === targetMonth);
+      const doneCount = list.filter(t => t.done).length;
 
       return `
         <div class="card p-4 space-y-3">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
               <span class="text-xl">🗓️</span>
-              <h2 class="text-base font-semibold">Monthly Todo (${currentMonth})</h2>
+              <h2 class="text-base font-semibold">Monthly Todo (${targetMonth})</h2>
             </div>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EBF1ED] text-[#3F6250]">${doneCount}/${list.length} done</span>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#EDE7DC]">
+            <label for="todo-target-month" class="text-xs font-medium text-[#786E65]">Target Month:</label>
+            <input
+              type="month"
+              id="todo-target-month"
+              value="${targetMonth}"
+              onchange="setTodoMonth(this.value)"
+              class="h-8 px-2.5 text-xs font-medium bg-white"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="text-xs font-medium text-[#786E65]">Months with Plans (${monthsWithPlans.length}):</div>
+            ${
+              monthsWithPlans.length > 0
+                ? `<div class="flex flex-wrap gap-1.5">
+                    ${monthsWithPlans
+                      .map(
+                        m => `
+                      <button
+                        type="button"
+                        onclick="setTodoMonth('${m.month}')"
+                        class="px-2.5 py-1 rounded-full text-xs border transition ${
+                          m.month === targetMonth
+                            ? 'bg-[#3F6250] text-white border-[#3F6250] font-medium'
+                            : 'bg-[#FAF7F2] text-[#2B2623] border-[#E6DFD3] hover:bg-[#EBF1ED]'
+                        }"
+                      >
+                        ${m.month} (${m.done}/${m.total})
+                      </button>
+                    `
+                      )
+                      .join('')}
+                  </div>`
+                : `<p class="text-xs text-[#786E65]">No months have plans yet.</p>`
+            }
           </div>
 
           <form onsubmit="addTodoItem(event)" class="flex gap-2">
-            <input type="text" id="todo-title" required placeholder="Add task for ${currentMonth}..." class="flex-1 h-9 px-3 text-sm" />
+            <input type="text" id="todo-title" required placeholder="Add task for ${targetMonth}..." class="flex-1 h-9 px-3 text-sm" />
             <button type="submit" class="px-3.5 h-9 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
           </form>
 
           <div class="space-y-1.5">
             ${
               list.length === 0
-                ? `<p class="text-xs text-[#786E65]">No tasks for ${currentMonth}.</p>`
+                ? `<p class="text-xs text-[#786E65]">No tasks for ${targetMonth}.</p>`
                 : list
                     .map(
                       t => `
@@ -1305,7 +1425,7 @@
 
           <textarea
             rows="6"
-            placeholder="Write freely in English or 中文..."
+            placeholder="Write today's diary entry..."
             oninput="updateDiaryContent(this.value)"
             class="w-full p-3 text-sm bg-[#FAF7F2] border border-[#EDE7DC] rounded-xl leading-relaxed"
           >${escapeHtml(currentContent)}</textarea>
@@ -1384,7 +1504,7 @@
           </div>
 
           <form onsubmit="addShoppingItem(event)" class="flex gap-2">
-            <input type="text" id="shop-name" required placeholder="Item name (English / 中文)..." class="flex-1 h-9 px-3 text-sm" />
+            <input type="text" id="shop-name" required placeholder="Item name..." class="flex-1 h-9 px-3 text-sm" />
             <button type="submit" class="px-3.5 h-9 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
           </form>
 
@@ -1417,8 +1537,7 @@
 
     function adjustGiCount(delta) {
       const log = getHealthLog(state.selectedDate);
-      const next = Math.max(0, (Number(log.giDiscomfortCount) || 0) + delta);
-      log.giDiscomfortCount = next;
+      log.giDiscomfortCount = Math.max(0, (Number(log.giDiscomfortCount) || 0) + delta);
       saveState();
       render();
     }
@@ -1439,7 +1558,12 @@
       const status = document.getElementById('new-learn-status').value;
       const progress = Math.min(100, Math.max(0, Number(document.getElementById('new-learn-progress').value) || 0));
       if (!title) return;
-      state.learningItems.unshift({ id: 'learn-' + Date.now(), title, status, progress });
+      state.learningItems.unshift({
+        id: 'learn-' + Date.now(),
+        title,
+        status,
+        progress: status === 'completed' ? 100 : progress
+      });
       saveState();
       render();
     }
@@ -1575,13 +1699,26 @@
       render();
     }
 
+    function setTodoMonth(monthStr) {
+      activeTodoMonth = monthStr || state.selectedDate.slice(0, 7);
+      render();
+    }
+
+    function jumpToTodoMonth(monthStr) {
+      activeTodoMonth = monthStr;
+      setTab('todo');
+    }
+
     function addTodoItem(e) {
       e.preventDefault();
       const title = document.getElementById('todo-title').value.trim();
+      const monthInput = document.getElementById('todo-target-month');
+      const month = (monthInput && monthInput.value) || getCurrentTodoMonth();
       if (!title) return;
+      activeTodoMonth = month;
       state.monthlyTodos.unshift({
         id: 'todo-' + Date.now(),
-        month: state.selectedDate.slice(0, 7),
+        month,
         title,
         done: false
       });
@@ -1750,8 +1887,8 @@
             <button type="button" onclick="closeModal()" class="text-xs text-[#786E65]">✕</button>
           </div>
           <form onsubmit="submitQuickAdd(event, 'reading')" class="space-y-2.5">
-            <input type="text" id="qa-title" required placeholder="Book title / 书名..." class="w-full h-9 px-3 text-sm" autofocus />
-            <input type="text" id="qa-sub" placeholder="Author / 作者 (optional)" class="w-full h-8 px-3 text-xs" />
+            <input type="text" id="qa-title" required placeholder="Book title..." class="w-full h-9 px-3 text-sm" autofocus />
+            <input type="text" id="qa-sub" placeholder="Author (optional)" class="w-full h-8 px-3 text-xs" />
             <div class="flex justify-end gap-2 pt-1">
               <button type="button" onclick="closeModal()" class="px-3 h-8 rounded-xl border border-[#E6DFD3] text-xs">Cancel</button>
               <button type="submit" class="px-4 h-8 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
@@ -1759,13 +1896,15 @@
           </form>
         `;
       } else if (kind === 'todo') {
+        const defaultMonth = getCurrentTodoMonth();
         box.innerHTML = `
           <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold">📅 Quick Add Monthly Todo (${state.selectedDate.slice(0, 7)})</h3>
+            <h3 class="text-sm font-semibold">📅 Quick Add Monthly Todo</h3>
             <button type="button" onclick="closeModal()" class="text-xs text-[#786E65]">✕</button>
           </div>
           <form onsubmit="submitQuickAdd(event, 'todo')" class="space-y-2.5">
-            <input type="text" id="qa-title" required placeholder="Task / 待办事项..." class="w-full h-9 px-3 text-sm" autofocus />
+            <input type="month" id="qa-month" value="${defaultMonth}" required class="w-full h-9 px-3 text-sm" />
+            <input type="text" id="qa-title" required placeholder="Task..." class="w-full h-9 px-3 text-sm" autofocus />
             <div class="flex justify-end gap-2 pt-1">
               <button type="button" onclick="closeModal()" class="px-3 h-8 rounded-xl border border-[#E6DFD3] text-xs">Cancel</button>
               <button type="submit" class="px-4 h-8 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
@@ -1779,7 +1918,7 @@
             <button type="button" onclick="closeModal()" class="text-xs text-[#786E65]">✕</button>
           </div>
           <form onsubmit="submitQuickAdd(event, 'shopping')" class="space-y-2.5">
-            <input type="text" id="qa-title" required placeholder="Item / 购买项目..." class="w-full h-9 px-3 text-sm" autofocus />
+            <input type="text" id="qa-title" required placeholder="Item..." class="w-full h-9 px-3 text-sm" autofocus />
             <div class="flex justify-end gap-2 pt-1">
               <button type="button" onclick="closeModal()" class="px-3 h-8 rounded-xl border border-[#E6DFD3] text-xs">Cancel</button>
               <button type="submit" class="px-4 h-8 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
@@ -1800,7 +1939,7 @@
           <button type="button" onclick="closeModal()" class="text-xs text-[#786E65]">✕</button>
         </div>
         <p class="text-xs text-[#786E65] mb-3">
-          Reset local storage data back to the initial sample state? Export a JSON backup first if you want to keep current records.
+          Reset all local data back to the initial sample state? Export a JSON backup first if you want to keep your entries.
         </p>
         <div class="flex justify-end gap-2">
           <button type="button" onclick="closeModal()" class="px-3 h-8 rounded-xl border border-[#E6DFD3] text-xs">Cancel</button>
@@ -1816,6 +1955,7 @@
         console.error('Failed to clear storage:', e);
       }
       state = createInitialState();
+      activeTodoMonth = null;
       saveState(true);
       closeModal();
       render();
@@ -1830,7 +1970,10 @@
         const author = (document.getElementById('qa-sub') && document.getElementById('qa-sub').value.trim()) || '';
         state.readingList.unshift({ id: 'book-' + Date.now(), title, author, status: 'reading' });
       } else if (kind === 'todo') {
-        state.monthlyTodos.unshift({ id: 'todo-' + Date.now(), month: state.selectedDate.slice(0, 7), title, done: false });
+        const monthInput = document.getElementById('qa-month');
+        const month = (monthInput && monthInput.value) || getCurrentTodoMonth();
+        activeTodoMonth = month;
+        state.monthlyTodos.unshift({ id: 'todo-' + Date.now(), month, title, done: false });
       } else if (kind === 'shopping') {
         state.shoppingList.unshift({ id: 'shop-' + Date.now(), name: title, bought: false });
       }
