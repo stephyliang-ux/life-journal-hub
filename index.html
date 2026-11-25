@@ -32,6 +32,7 @@
       color: var(--ink-primary);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
       line-height: 1.5;
+      overflow-x: hidden;
     }
 
     .no-scrollbar::-webkit-scrollbar {
@@ -99,14 +100,16 @@
     <header class="sticky top-0 z-30 bg-[#FAF7F2]/95 backdrop-blur-sm border-b border-[#E6DFD3] px-3 pt-2.5 pb-2">
       <div class="flex items-center justify-between mb-2 px-1">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-semibold tracking-tight text-[#2B2623]" id="header-date-label">2026-11-25</span>
+          <span class="text-sm font-semibold tracking-tight text-[#2B2623]" id="header-date-label"></span>
           <span id="sync-status-dot" class="inline-block w-2 h-2 rounded-full bg-[#B5ABA0]" title="Local storage active"></span>
         </div>
         <button
+          type="button"
           id="frame-toggle-btn"
           onclick="toggleMobileFrame()"
           class="hidden sm:inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-[#E6DFD3] bg-[#FFFCF7] text-[#786E65] hover:text-[#2B2623]"
           title="Toggle 390x844 Mobile Frame Preview"
+          aria-label="Toggle 390x844 Mobile Frame Preview"
         >
           📱 Mobile Frame
         </button>
@@ -121,16 +124,16 @@
 
     <!-- Bottom Footer: Achievements + Date Navigation + Utility & Cloud Controls -->
     <footer class="px-3.5 pt-2 pb-5 space-y-2.5 border-t border-[#E6DFD3] bg-[#FAF7F2]">
-      <!-- Achievements Strip (Always at the bottom above footer bar) -->
+      <!-- Achievements Strip (Always above footer utility bar) -->
       <div id="achievements-container"></div>
 
       <!-- Date Navigator & Utility/Cloud Bar -->
       <div class="card px-2.5 py-2 flex flex-wrap items-center justify-between gap-1.5">
         <!-- Date Controls -->
         <div class="flex items-center gap-1">
-          <button onclick="shiftDate(-2)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="2 Days Ago" aria-label="2 Days Ago">⏪</button>
-          <button onclick="shiftDate(-1)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="Yesterday" aria-label="Yesterday">◀</button>
-          <button onclick="goToday()" class="btn-pill w-8 h-8 rounded-xl bg-[#EBF1ED] border border-[#C7D7CE] text-[#3F6250] flex items-center justify-center text-xs font-bold" title="Today" aria-label="Today">●</button>
+          <button type="button" onclick="shiftDate(-2)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="2 Days Ago" aria-label="2 Days Ago">⏪</button>
+          <button type="button" onclick="shiftDate(-1)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="Yesterday" aria-label="Yesterday">◀</button>
+          <button type="button" onclick="goToday()" class="btn-pill w-8 h-8 rounded-xl bg-[#EBF1ED] border border-[#C7D7CE] text-[#3F6250] flex items-center justify-center text-xs font-bold" title="Today" aria-label="Today">●</button>
           <input
             type="date"
             id="footer-date-picker"
@@ -138,14 +141,1924 @@
             class="h-8 px-2 text-xs font-medium bg-[#FAF7F2] border border-[#E6DFD3] rounded-xl"
             aria-label="Select Date"
           />
-          <button onclick="shiftDate(1)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="Tomorrow" aria-label="Tomorrow">▶</button>
-          <button onclick="shiftDate(2)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="Day After Tomorrow" aria-label="Day After Tomorrow">⏩</button>
+          <button type="button" onclick="shiftDate(1)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="Tomorrow" aria-label="Tomorrow">▶</button>
+          <button type="button" onclick="shiftDate(2)" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-xs" title="Day After Tomorrow" aria-label="Day After Tomorrow">⏩</button>
         </div>
 
         <!-- Settings, Cloud Sync & Backup Icons -->
         <div class="flex items-center gap-1">
-          <button onclick="openModal('settings')" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Cycle & Year Settings" aria-label="Cycle and Year Settings">⚙️</button>
-          <button onclick="openModal('cloud')" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Supabase Cloud Sync" aria-label="Supabase Cloud Sync">☁️</button>
-          <button onclick="syncNow()" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Sync Now" aria-label="Sync Now">🔄</button>
-          <button onclick="toggleAutoSync()" id="auto-sync-btn" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Toggle Auto-Sync" aria-label="Toggle Auto-Sync">⏱️</button>
-          <button onclick="exportJSON()" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex
+          <button type="button" onclick="openModal('settings')" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Cycle & Year Settings" aria-label="Cycle and Year Settings">⚙️</button>
+          <button type="button" onclick="openModal('cloud')" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Supabase Cloud Sync" aria-label="Supabase Cloud Sync">☁️</button>
+          <button type="button" onclick="syncNow()" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Sync Now" aria-label="Sync Now">🔄</button>
+          <button type="button" onclick="toggleAutoSync()" id="auto-sync-btn" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Toggle Auto-Sync" aria-label="Toggle Auto-Sync">⏱️</button>
+          <button type="button" onclick="exportJSON()" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Export JSON Backup" aria-label="Export JSON Backup">📤</button>
+          <label class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm cursor-pointer" title="Import JSON Backup" aria-label="Import JSON Backup">
+            📥
+            <input type="file" accept=".json" onchange="importJSON(event)" class="hidden" />
+          </label>
+          <button type="button" onclick="openResetModal()" class="btn-pill w-8 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] flex items-center justify-center text-sm" title="Reset Data" aria-label="Reset Data">♻️</button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal Overlay (Settings / Cloud Sync / Quick Add / Reset) -->
+  <div id="modal-backdrop" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-[1px] flex items-end sm:items-center justify-center p-3">
+    <div id="modal-box" class="card w-full max-w-md p-4 bg-[#FFFCF7] max-h-[85vh] overflow-y-auto"></div>
+  </div>
+
+  <!-- Toast Feedback -->
+  <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 hidden px-3.5 py-1.5 rounded-full bg-[#2B2623] text-[#FFFCF7] text-xs font-medium shadow-lg"></div>
+
+  <script>
+    const STORAGE_KEY = 'life_journal_hub_complete_v5';
+    const LEGACY_KEYS = ['life_journal_hub_complete_v4', 'life_journal_hub_complete_v3', 'life_journal_hub_v2'];
+
+    const NAV_ITEMS = [
+      { id: 'home', icon: '🏡', label: 'Home' },
+      { id: 'health', icon: '🌿', label: 'Health' },
+      { id: 'learning', icon: '💻', label: 'Learning' },
+      { id: 'family', icon: '🧹', label: 'Family' },
+      { id: 'reading', icon: '📚', label: 'Reading' },
+      { id: 'todo', icon: '🗓️', label: 'Monthly Todo' },
+      { id: 'diary', icon: '📖', label: 'Diary' },
+      { id: 'shopping', icon: '🛒', label: 'Shopping List' }
+    ];
+
+    function getLocalTodayStr() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    const DEFAULT_TODAY = getLocalTodayStr();
+
+    function createInitialState() {
+      return {
+        selectedDate: DEFAULT_TODAY,
+        activeTab: 'home',
+        mobileFrame: false,
+        settings: {
+          startDate: DEFAULT_TODAY,
+          lastPeriodDate: '2026-11-05',
+          cycleLength: 28
+        },
+        cloud: {
+          url: '',
+          anonKey: '',
+          table: 'life_journal_state',
+          recordId: 'default_user',
+          autoSync: false,
+          lastSynced: ''
+        },
+        healthLogs: {
+          [DEFAULT_TODAY]: {
+            exerciseDone: true,
+            exerciseNote: '30 min walk + stretching / 快走与拉伸',
+            meditationMinutes: 15,
+            phoneControl: 'yes',
+            massage: false,
+            giDiscomfortCount: 0,
+            periodStart: false
+          }
+        },
+        learningItems: [
+          {
+            id: 'learn-1',
+            title: 'Web Development & Database Module / 网页与数据库练习',
+            status: 'in_progress',
+            progress: 65,
+            notes: 'HTML5, CSS, Supabase sync'
+          }
+        ],
+        familyItems: [
+          {
+            id: 'fam-1',
+            date: DEFAULT_TODAY,
+            title: 'Walk Cookie & tidy living room / 遛狗与整理客厅',
+            done: false
+          }
+        ],
+        specialCleaning: [
+          {
+            id: 'clean-1',
+            date: DEFAULT_TODAY,
+            task: 'Wipe kitchen rangehood & dining sideboard / 擦拭油烟机与餐边柜',
+            area: 'Kitchen & Dining',
+            priority: 'Normal',
+            notes: 'Use mild eucalyptus spray',
+            done: false
+          }
+        ],
+        readingList: [
+          {
+            id: 'book-1',
+            title: 'Biohack Your Brain / 大脑逆龄指南',
+            author: 'Dr. Kristen Willeumier',
+            status: 'reading',
+            notes: 'Chapter 3 nutrition & sleep'
+          }
+        ],
+        monthlyTodos: [
+          {
+            id: 'todo-1',
+            month: DEFAULT_TODAY.slice(0, 7),
+            title: 'Organize garden rose fertilizer schedule / 整理月季施肥计划',
+            done: false
+          }
+        ],
+        diaryEntries: {
+          [DEFAULT_TODAY]: {
+            content: 'Started using the streamlined Life Journal Hub today. Morning coffee, warm breeze, and calm focus.\n今天开始使用生活记录本，记录日常习惯、任务与随笔。',
+            updatedAt: new Date().toISOString()
+          }
+        },
+        shoppingList: [
+          {
+            id: 'shop-1',
+            name: 'Fresh prawns & baby spinach / 鲜虾与嫩菠菜',
+            category: 'Groceries',
+            bought: false
+          }
+        ]
+      };
+    }
+
+    let state = loadState();
+    let diarySearchQuery = '';
+    let expandedDiaryDates = {};
+    let cleaningFilter = 'all';
+    let cleaningEditId = null;
+    let autoSyncTimer = null;
+
+    function deepMerge(target, source) {
+      if (!source || typeof source !== 'object') return target;
+      const out = Array.isArray(target) ? [...target] : { ...target };
+      for (const key of Object.keys(source)) {
+        if (
+          source[key] &&
+          typeof source[key] === 'object' &&
+          !Array.isArray(source[key]) &&
+          target[key] &&
+          typeof target[key] === 'object' &&
+          !Array.isArray(target[key])
+        ) {
+          out[key] = deepMerge(target[key], source[key]);
+        } else {
+          out[key] = source[key];
+        }
+      }
+      return out;
+    }
+
+    function loadState() {
+      const base = createInitialState();
+      try {
+        let raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          for (const oldKey of LEGACY_KEYS) {
+            const legacy = localStorage.getItem(oldKey);
+            if (legacy) {
+              raw = legacy;
+              break;
+            }
+          }
+        }
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const merged = deepMerge(base, parsed);
+          if (!merged.selectedDate) merged.selectedDate = getLocalTodayStr();
+          if (!merged.settings.startDate) merged.settings.startDate = merged.selectedDate;
+          return merged;
+        }
+      } catch (e) {
+        console.error('Failed to load state:', e);
+      }
+      return base;
+    }
+
+    function saveState(skipCloud = false) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error('Failed to save state:', e);
+      }
+      if (!skipCloud && state.cloud && state.cloud.autoSync && state.cloud.url && state.cloud.anonKey) {
+        clearTimeout(autoSyncTimer);
+        autoSyncTimer = setTimeout(() => {
+          pushToCloud(true);
+        }, 1200);
+      }
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => {
+        el.classList.add('hidden');
+      }, 2200);
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function parseYMD(dateStr) {
+      const parts = String(dateStr || '').split('-').map(Number);
+      if (parts.length === 3 && !parts.some(Number.isNaN)) {
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+      }
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    function formatYMD(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function shiftDate(days) {
+      const dt = parseYMD(state.selectedDate);
+      dt.setDate(dt.getDate() + days);
+      state.selectedDate = formatYMD(dt);
+      saveState(true);
+      render();
+    }
+
+    function goToday() {
+      state.selectedDate = getLocalTodayStr();
+      saveState(true);
+      render();
+    }
+
+    function setSelectedDate(val) {
+      if (!val) return;
+      state.selectedDate = val;
+      saveState(true);
+      render();
+    }
+
+    function toggleMobileFrame() {
+      state.mobileFrame = !state.mobileFrame;
+      document.body.classList.toggle('mobile-frame-mode', state.mobileFrame);
+      saveState(true);
+    }
+
+    /* Calendar-Year Denominator Logic */
+    function isLeapYear(year) {
+      return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    }
+
+    function getYearDenominator(year) {
+      const startStr = (state.settings && state.settings.startDate) || DEFAULT_TODAY;
+      const startDate = parseYMD(startStr);
+      const startYear = startDate.getFullYear();
+      if (year === startYear) {
+        const endOfYear = new Date(year, 11, 31);
+        const diffMs = endOfYear.getTime() - startDate.getTime();
+        const remaining = Math.floor(diffMs / 86400000) + 1;
+        return Math.max(1, remaining);
+      }
+      return isLeapYear(year) ? 366 : 365;
+    }
+
+    function getHealthLog(dateStr) {
+      if (!state.healthLogs[dateStr]) {
+        state.healthLogs[dateStr] = {
+          exerciseDone: false,
+          exerciseNote: '',
+          meditationMinutes: 0,
+          phoneControl: 'unset',
+          massage: false,
+          giDiscomfortCount: 0,
+          periodStart: false
+        };
+      }
+      return state.healthLogs[dateStr];
+    }
+
+    function getCycleCountdown() {
+      const cycleLen = Math.max(20, Math.min(45, Number(state.settings && state.settings.cycleLength) || 28));
+      const periodDates = Object.keys(state.healthLogs)
+        .filter(d => state.healthLogs[d] && state.healthLogs[d].periodStart && d <= state.selectedDate)
+        .sort();
+      const latestStart = periodDates.length > 0 ? periodDates[periodDates.length - 1] : (state.settings && state.settings.lastPeriodDate);
+      if (!latestStart) return null;
+      const start = parseYMD(latestStart);
+      const current = parseYMD(state.selectedDate);
+      const elapsed = Math.floor((current.getTime() - start.getTime()) / 86400000);
+      if (elapsed < 0) return null;
+      const mod = elapsed % cycleLen;
+      return cycleLen - mod;
+    }
+
+    function computeYearStats(year) {
+      const denom = getYearDenominator(year);
+      const prefix = `${year}-`;
+      let exerciseDays = 0;
+      let meditationDays = 0;
+      let meditationTotalMins = 0;
+      let phoneControlDays = 0;
+      let massageDays = 0;
+      let giTotalEpisodes = 0;
+
+      for (const [dateStr, log] of Object.entries(state.healthLogs)) {
+        if (!dateStr.startsWith(prefix) || !log) continue;
+        if (log.exerciseDone) exerciseDays++;
+        const mins = Number(log.meditationMinutes) || 0;
+        if (mins > 0) {
+          meditationDays++;
+          meditationTotalMins += mins;
+        }
+        if (log.phoneControl === 'yes') phoneControlDays++;
+        if (log.massage) massageDays++;
+        giTotalEpisodes += Number(log.giDiscomfortCount) || 0;
+      }
+
+      return {
+        year,
+        denom,
+        exerciseDays,
+        meditationDays,
+        meditationTotalMins,
+        phoneControlDays,
+        massageDays,
+        giTotalEpisodes
+      };
+    }
+
+    function compute7DayStats() {
+      const end = parseYMD(state.selectedDate);
+      let ex = 0, medMins = 0, medDays = 0, phone = 0, massage = 0, gi = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(end);
+        d.setDate(end.getDate() - i);
+        const key = formatYMD(d);
+        const log = state.healthLogs[key];
+        if (!log) continue;
+        if (log.exerciseDone) ex++;
+        const m = Number(log.meditationMinutes) || 0;
+        if (m > 0) {
+          medDays++;
+          medMins += m;
+        }
+        if (log.phoneControl === 'yes') phone++;
+        if (log.massage) massage++;
+        gi += Number(log.giDiscomfortCount) || 0;
+      }
+      return { ex, medMins, medDays, phone, massage, gi };
+    }
+
+    function isDayActive(dateStr) {
+      const log = state.healthLogs[dateStr];
+      if (log) {
+        if (log.exerciseDone || (Number(log.meditationMinutes) || 0) > 0 || log.phoneControl === 'yes' || log.massage || log.periodStart) {
+          return true;
+        }
+      }
+      const diary = state.diaryEntries[dateStr];
+      if (diary && diary.content && diary.content.trim().length > 0) return true;
+      if (state.familyItems.some(i => i.date === dateStr && i.done)) return true;
+      if (state.specialCleaning.some(i => i.date === dateStr && i.done)) return true;
+      return false;
+    }
+
+    function computeStreak() {
+      let streak = 0;
+      const cursor = parseYMD(state.selectedDate);
+      while (streak < 3660) {
+        const key = formatYMD(cursor);
+        if (isDayActive(key)) {
+          streak++;
+          cursor.setDate(cursor.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+      return streak;
+    }
+
+    /* Navigation & Main Render */
+    function setTab(tabId) {
+      state.activeTab = tabId;
+      saveState(true);
+      render();
+    }
+
+    function renderNav() {
+      const nav = document.getElementById('top-nav');
+      if (!nav) return;
+      nav.innerHTML = NAV_ITEMS.map(item => {
+        const active = state.activeTab === item.id;
+        return `
+          <button
+            type="button"
+            onclick="setTab('${item.id}')"
+            title="${item.label}"
+            aria-label="${item.label}"
+            class="btn-pill shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg border ${
+              active
+                ? 'bg-[#3F6250] text-white border-[#3F6250] shadow-sm'
+                : 'bg-[#FFFCF7] text-[#2B2623] border-[#E6DFD3] hover:bg-[#F3EDE2]'
+            }"
+          >
+            ${item.icon}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderAchievements() {
+      const container = document.getElementById('achievements-container');
+      if (!container) return;
+      const year = parseYMD(state.selectedDate).getFullYear();
+      const stats = computeYearStats(year);
+      const streak = computeStreak();
+      const booksFinished = state.readingList.filter(b => b.status === 'finished').length;
+      const diaryCount = Object.values(state.diaryEntries).filter(e => e && e.content && e.content.trim()).length;
+      const tasksDone =
+        state.monthlyTodos.filter(t => t.done).length +
+        state.familyItems.filter(f => f.done).length +
+        state.specialCleaning.filter(c => c.done).length;
+
+      const badges = [
+        { show: streak > 0, icon: '🔥', label: 'Streak', value: `${streak}d` },
+        { show: stats.exerciseDays > 0, icon: '💪', label: 'Workouts', value: `${stats.exerciseDays}/${stats.denom}d` },
+        { show: stats.meditationDays > 0, icon: '🧘', label: 'Meditation', value: `${stats.meditationDays}/${stats.denom}d` },
+        { show: stats.phoneControlDays > 0, icon: '📵', label: 'Phone Control', value: `${stats.phoneControlDays}/${stats.denom}d` },
+        { show: stats.massageDays > 0, icon: '💆', label: 'Massage', value: `${stats.massageDays}/${stats.denom}d` },
+        { show: booksFinished > 0, icon: '📚', label: 'Books Finished', value: `${booksFinished}` },
+        { show: diaryCount > 0, icon: '✍️', label: 'Diary Entries', value: `${diaryCount}` },
+        { show: tasksDone > 0, icon: '✅', label: 'Tasks Done', value: `${tasksDone}` }
+      ].filter(b => b.show);
+
+      if (badges.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="card px-3 py-2.5 bg-[#FFFCF7]">
+          <div class="flex items-center gap-1.5 mb-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-[#786E65]">✨ Achievements (${year})</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            ${badges
+              .map(
+                b => `
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-[#EBF1ED] text-[#2B2623] border border-[#D4E2DA]">
+                <span>${b.icon}</span>
+                <span class="text-[#5A524C]">${b.label}:</span>
+                <strong class="font-semibold text-[#3F6250]">${b.value}</strong>
+              </span>
+            `
+              )
+              .join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHome() {
+      const d = state.selectedDate;
+      const year = parseYMD(d).getFullYear();
+      const log = getHealthLog(d);
+      const yStats = computeYearStats(year);
+      const cycleDays = getCycleCountdown();
+
+      const activeLearning = state.learningItems.filter(i => i.status === 'in_progress');
+      const todayFamily = state.familyItems.filter(i => i.date === d);
+      const todayCleaning = state.specialCleaning.filter(i => i.date === d);
+      const hasTodayFamily = todayFamily.length > 0 || todayCleaning.length > 0;
+
+      const currentMonth = d.slice(0, 7);
+      const monthTodos = state.monthlyTodos.filter(t => t.month === currentMonth);
+      const pendingShop = state.shoppingList.filter(s => !s.bought);
+      const diaryText = (state.diaryEntries[d] && state.diaryEntries[d].content) || '';
+
+      return `
+        <!-- 1. Health Card -->
+        <section class="card p-3.5 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="setTab('health')" class="text-lg leading-none" title="Health Details" aria-label="Health Details">🩺</button>
+              ${
+                cycleDays !== null
+                  ? `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F9ECEE] text-[#A84A5C] border border-[#EED3D8]">🩸 ${cycleDays} days</span>`
+                  : ''
+              }
+            </div>
+            <button type="button" onclick="setTab('health')" class="text-xs text-[#786E65] hover:text-[#2B2623]" aria-label="Open Health">→</button>
+          </div>
+
+          <!-- Exercise Row -->
+          <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
+            <label class="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                ${log.exerciseDone ? 'checked' : ''}
+                onchange="updateHealthField('exerciseDone', this.checked)"
+                class="w-4 h-4 accent-[#3F6250] rounded"
+              />
+              <span class="text-sm font-medium">Exercise / 运动</span>
+            </label>
+            <span class="text-xs font-medium text-[#3F6250]">${yStats.exerciseDays}/${yStats.denom}d</span>
+          </div>
+
+          <!-- Meditation Minutes Input -->
+          <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
+            <span class="text-sm font-medium">Meditation / 静坐</span>
+            <div class="flex items-center gap-1.5">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value="${log.meditationMinutes || ''}"
+                placeholder="0"
+                onchange="updateHealthField('meditationMinutes', Math.max(0, parseInt(this.value || '0', 10)))"
+                class="w-16 h-7 px-2 text-right text-sm font-medium"
+                aria-label="Meditation Minutes"
+              />
+              <span class="text-xs text-[#786E65]">min</span>
+            </div>
+          </div>
+
+          <!-- Phone Control Dropdown -->
+          <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
+            <span class="text-sm font-medium">Phone Control / 控手机</span>
+            <div class="flex items-center gap-2">
+              <select
+                onchange="updateHealthField('phoneControl', this.value)"
+                class="h-7 px-2 text-xs font-medium bg-white"
+                aria-label="Phone Control Status"
+              >
+                <option value="unset" ${log.phoneControl === 'unset' ? 'selected' : ''}>—</option>
+                <option value="yes" ${log.phoneControl === 'yes' ? 'selected' : ''}>Yes / 是</option>
+                <option value="no" ${log.phoneControl === 'no' ? 'selected' : ''}>No / 否</option>
+              </select>
+              <span class="text-xs font-medium text-[#3F6250]">${yStats.phoneControlDays}/${yStats.denom}d</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. Learning Card -->
+        ${
+          activeLearning.length > 0
+            ? `
+          <section class="card p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <button type="button" onclick="setTab('learning')" class="text-lg leading-none" title="Learning" aria-label="Learning">📚</button>
+              <button type="button" onclick="setTab('learning')" class="text-xs text-[#786E65] hover:text-[#2B2623]" aria-label="Open Learning">→</button>
+            </div>
+            <div class="space-y-1.5">
+              ${activeLearning
+                .map(
+                  item => `
+                <div class="flex items-center justify-between gap-2 text-sm bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
+                  <span class="truncate">${escapeHtml(item.title)}</span>
+                  <span class="text-xs font-semibold text-[#3F6250] shrink-0">${item.progress || 0}%</span>
+                </div>
+              `
+                )
+                .join('')}
+            </div>
+          </section>
+        `
+            : ''
+        }
+
+        <!-- 3. Family Card -->
+        ${
+          hasTodayFamily
+            ? `
+          <section class="card p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <button type="button" onclick="setTab('family')" class="text-lg leading-none" title="Family & Cleaning" aria-label="Family and Cleaning">🏡</button>
+              <button type="button" onclick="setTab('family')" class="text-xs text-[#786E65] hover:text-[#2B2623]" aria-label="Open Family">→</button>
+            </div>
+            <div class="space-y-1.5">
+              ${todayFamily
+                .map(
+                  item => `
+                <label class="flex items-center gap-2.5 text-sm bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC] cursor-pointer">
+                  <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleFamilyItem('${item.id}')" class="w-4 h-4 accent-[#3F6250]" />
+                  <span class="${item.done ? 'line-through text-[#786E65]' : ''}">${escapeHtml(item.title)}</span>
+                </label>
+              `
+                )
+                .join('')}
+              ${todayCleaning
+                .map(
+                  c => `
+                <label class="flex items-center justify-between gap-2 text-sm bg-[#FBF3E6]/70 px-3 py-2 rounded-xl border border-[#EEDCC0] cursor-pointer">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <input type="checkbox" ${c.done ? 'checked' : ''} onchange="toggleCleaningItem('${c.id}')" class="w-4 h-4 accent-[#3F6250]" />
+                    <span class="truncate ${c.done ? 'line-through text-[#786E65]' : ''}">🧹 ${escapeHtml(c.task)}</span>
+                  </div>
+                  ${c.area ? `<span class="text-[11px] px-2 py-0.5 rounded-full bg-white text-[#A66E2E] shrink-0">${escapeHtml(c.area)}</span>` : ''}
+                </label>
+              `
+                )
+                .join('')}
+            </div>
+          </section>
+        `
+            : ''
+        }
+
+        <!-- 4. Reading Card -->
+        <section class="card p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <button type="button" onclick="setTab('reading')" class="text-lg leading-none" title="Reading List" aria-label="Reading List">📖</button>
+            <button type="button" onclick="openQuickAdd('reading')" class="w-7 h-7 rounded-full bg-[#EBF1ED] text-[#3F6250] flex items-center justify-center text-xs font-bold" title="Quick Add Book" aria-label="Quick Add Book">➕</button>
+          </div>
+          ${
+            state.readingList.length > 0
+              ? `<div class="space-y-1.5">
+                  ${state.readingList
+                    .slice(0, 3)
+                    .map(
+                      b => `
+                    <div class="flex items-center justify-between gap-2 text-sm bg-[#FAF7F2] px-3 py-1.5 rounded-xl border border-[#EDE7DC]">
+                      <span class="truncate ${b.status === 'finished' ? 'line-through text-[#786E65]' : ''}">${escapeHtml(b.title)}</span>
+                      <span class="text-[11px] px-2 py-0.5 rounded-full bg-white border border-[#E6DFD3] text-[#786E65] shrink-0">${b.status === 'finished' ? 'Done' : b.status === 'reading' ? 'Reading' : 'To Read'}</span>
+                    </div>
+                  `
+                    )
+                    .join('')}
+                </div>`
+              : `<p class="text-xs text-[#786E65] px-1">No books listed yet.</p>`
+          }
+        </section>
+
+        <!-- 5. Monthly Todo Card -->
+        <section class="card p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <button type="button" onclick="setTab('todo')" class="text-lg leading-none" title="Monthly Todo" aria-label="Monthly Todo">📅</button>
+            <button type="button" onclick="openQuickAdd('todo')" class="w-7 h-7 rounded-full bg-[#EBF1ED] text-[#3F6250] flex items-center justify-center text-xs font-bold" title="Quick Add Todo" aria-label="Quick Add Todo">➕</button>
+          </div>
+          ${
+            monthTodos.length > 0
+              ? `<div class="space-y-1.5">
+                  ${monthTodos
+                    .slice(0, 4)
+                    .map(
+                      t => `
+                    <label class="flex items-center gap-2.5 text-sm bg-[#FAF7F2] px-3 py-1.5 rounded-xl border border-[#EDE7DC] cursor-pointer">
+                      <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodoItem('${t.id}')" class="w-4 h-4 accent-[#3F6250]" />
+                      <span class="truncate ${t.done ? 'line-through text-[#786E65]' : ''}">${escapeHtml(t.title)}</span>
+                    </label>
+                  `
+                    )
+                    .join('')}
+                </div>`
+              : `<p class="text-xs text-[#786E65] px-1">No todos for ${currentMonth}.</p>`
+          }
+        </section>
+
+        <!-- 6. Diary Card -->
+        <section class="card p-3.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <button type="button" onclick="setTab('diary')" class="text-lg leading-none" title="Diary" aria-label="Diary">✍️</button>
+            <button type="button" onclick="setTab('diary')" class="text-xs text-[#786E65] hover:text-[#2B2623]" aria-label="Open Diary">→</button>
+          </div>
+          <textarea
+            rows="3"
+            placeholder="Write today's note (English or 中文)..."
+            oninput="updateDiaryContent(this.value)"
+            class="w-full p-2.5 text-sm bg-[#FAF7F2] border border-[#EDE7DC] rounded-xl resize-none"
+          >${escapeHtml(diaryText)}</textarea>
+        </section>
+
+        <!-- 7. Shopping List Card -->
+        <section class="card p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <button type="button" onclick="setTab('shopping')" class="text-lg leading-none" title="Shopping List" aria-label="Shopping List">🛒</button>
+            <button type="button" onclick="openQuickAdd('shopping')" class="w-7 h-7 rounded-full bg-[#EBF1ED] text-[#3F6250] flex items-center justify-center text-xs font-bold" title="Quick Add Item" aria-label="Quick Add Item">➕</button>
+          </div>
+          ${
+            pendingShop.length > 0
+              ? `<div class="flex flex-wrap gap-1.5">
+                  ${pendingShop
+                    .map(
+                      s => `
+                    <button
+                      type="button"
+                      onclick="toggleShoppingItem('${s.id}')"
+                      class="px-2.5 py-1 rounded-full text-xs bg-[#FAF7F2] border border-[#E6DFD3] hover:bg-[#EBF1ED] text-[#2B2623]"
+                    >
+                      ○ ${escapeHtml(s.name)}
+                    </button>
+                  `
+                    )
+                    .join('')}
+                </div>`
+              : `<p class="text-xs text-[#786E65] px-1">Shopping list is clear.</p>`
+          }
+        </section>
+      `;
+    }
+
+    /* Subpage: Health */
+    function renderHealthPage() {
+      const d = state.selectedDate;
+      const year = parseYMD(d).getFullYear();
+      const log = getHealthLog(d);
+      const yStats = computeYearStats(year);
+      const wStats = compute7DayStats();
+      const cycleDays = getCycleCountdown();
+
+      return `
+        <div class="card p-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🌿</span>
+              <h2 class="text-base font-semibold">Health & Habits (${d})</h2>
+            </div>
+            ${
+              cycleDays !== null
+                ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#F9ECEE] text-[#A84A5C]">🩸 ${cycleDays} days</span>`
+                : ''
+            }
+          </div>
+
+          <div class="space-y-2.5">
+            <div class="bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC] space-y-2">
+              <label class="flex items-center justify-between cursor-pointer">
+                <span class="text-sm font-medium">💪 Exercise Completed</span>
+                <input type="checkbox" ${log.exerciseDone ? 'checked' : ''} onchange="updateHealthField('exerciseDone', this.checked)" class="w-4 h-4 accent-[#3F6250]" />
+              </label>
+              <input
+                type="text"
+                value="${escapeHtml(log.exerciseNote || '')}"
+                placeholder="Workout note / 运动备注 (e.g. 2km jog, yoga)"
+                onchange="updateHealthField('exerciseNote', this.value)"
+                class="w-full h-8 px-2.5 text-xs"
+              />
+            </div>
+
+            <div class="flex items-center justify-between bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC]">
+              <span class="text-sm font-medium">🧘 Meditation Minutes</span>
+              <div class="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min="0"
+                  value="${log.meditationMinutes || ''}"
+                  placeholder="0"
+                  onchange="updateHealthField('meditationMinutes', Math.max(0, parseInt(this.value || '0', 10)))"
+                  class="w-20 h-8 px-2.5 text-right text-sm"
+                />
+                <span class="text-xs text-[#786E65]">min</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC]">
+              <span class="text-sm font-medium">📵 Phone Control</span>
+              <select onchange="updateHealthField('phoneControl', this.value)" class="h-8 px-2.5 text-xs font-medium">
+                <option value="unset" ${log.phoneControl === 'unset' ? 'selected' : ''}>Not Set</option>
+                <option value="yes" ${log.phoneControl === 'yes' ? 'selected' : ''}>Yes / Controlled</option>
+                <option value="no" ${log.phoneControl === 'no' ? 'selected' : ''}>No / Exceeded</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC]">
+              <span class="text-sm font-medium">💆 Massage / Bodywork</span>
+              <input type="checkbox" ${log.massage ? 'checked' : ''} onchange="updateHealthField('massage', this.checked)" class="w-4 h-4 accent-[#3F6250]" />
+            </div>
+
+            <div class="flex items-center justify-between bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC]">
+              <span class="text-sm font-medium">🍵 GI Discomfort Episodes</span>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="adjustGiCount(-1)" class="w-7 h-7 rounded-lg bg-white border border-[#E6DFD3] font-bold">-</button>
+                <span class="w-6 text-center text-sm font-semibold">${log.giDiscomfortCount || 0}</span>
+                <button type="button" onclick="adjustGiCount(1)" class="w-7 h-7 rounded-lg bg-white border border-[#E6DFD3] font-bold">+</button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between bg-[#F9ECEE]/60 p-3 rounded-xl border border-[#EED3D8]">
+              <span class="text-sm font-medium text-[#A84A5C]">🩸 Period Start Date (Mark Today)</span>
+              <input type="checkbox" ${log.periodStart ? 'checked' : ''} onchange="togglePeriodStart(this.checked)" class="w-4 h-4 accent-[#A84A5C]" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-4 space-y-3">
+          <h3 class="text-sm font-semibold text-[#2B2623]">📊 ${year} Calendar Year Summary (Denom: ${yStats.denom}d)</h3>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#EDE7DC]">
+              <div class="text-[#786E65]">💪 Exercise</div>
+              <div class="text-sm font-semibold text-[#3F6250] mt-0.5">${yStats.exerciseDays} / ${yStats.denom} days</div>
+            </div>
+            <div class="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#EDE7DC]">
+              <div class="text-[#786E65]">🧘 Meditation</div>
+              <div class="text-sm font-semibold text-[#3F6250] mt-0.5">${yStats.meditationDays} / ${yStats.denom}d (${yStats.meditationTotalMins}m)</div>
+            </div>
+            <div class="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#EDE7DC]">
+              <div class="text-[#786E65]">📵 Phone Control</div>
+              <div class="text-sm font-semibold text-[#3F6250] mt-0.5">${yStats.phoneControlDays} / ${yStats.denom} days</div>
+            </div>
+            <div class="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#EDE7DC]">
+              <div class="text-[#786E65]">💆 Massage</div>
+              <div class="text-sm font-semibold text-[#3F6250] mt-0.5">${yStats.massageDays} / ${yStats.denom} days</div>
+            </div>
+            <div class="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#EDE7DC] col-span-2">
+              <div class="text-[#786E65]">🍵 GI Discomfort Total (${year})</div>
+              <div class="text-sm font-semibold text-[#2B2623] mt-0.5">${yStats.giTotalEpisodes} episodes</div>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-[#EDE7DC]">
+            <div class="text-xs font-semibold text-[#786E65] mb-1.5">Rolling 7-Day Window (Ending ${d})</div>
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <span class="px-2.5 py-1 rounded-full bg-[#FAF7F2] border border-[#E6DFD3]">💪 ${wStats.ex}/7d</span>
+              <span class="px-2.5 py-1 rounded-full bg-[#FAF7F2] border border-[#E6DFD3]">🧘 ${wStats.medMins}m (${wStats.medDays}d)</span>
+              <span class="px-2.5 py-1 rounded-full bg-[#FAF7F2] border border-[#E6DFD3]">📵 ${wStats.phone}/7d</span>
+              <span class="px-2.5 py-1 rounded-full bg-[#FAF7F2] border border-[#E6DFD3]">💆 ${wStats.massage}/7d</span>
+              <span class="px-2.5 py-1 rounded-full bg-[#FAF7F2] border border-[#E6DFD3]">🍵 ${wStats.gi}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* Subpage: Learning */
+    function renderLearningPage() {
+      return `
+        <div class="card p-4 space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">💻</span>
+            <h2 class="text-base font-semibold">Learning & Skills</h2>
+          </div>
+
+          <form onsubmit="addLearningItem(event)" class="space-y-2 bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC]">
+            <input type="text" id="new-learn-title" required placeholder="Course, module, or skill (English / 中文)..." class="w-full h-9 px-3 text-sm" />
+            <div class="flex gap-2">
+              <select id="new-learn-status" class="h-8 px-2.5 text-xs flex-1">
+                <option value="in_progress">In Progress</option>
+                <option value="planned">Planned</option>
+                <option value="completed">Completed</option>
+              </select>
+              <input type="number" id="new-learn-progress" min="0" max="100" value="0" placeholder="%" class="w-20 h-8 px-2 text-xs text-right" />
+              <button type="submit" class="px-3.5 h-8 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
+            </div>
+          </form>
+
+          <div class="space-y-2">
+            ${state.learningItems
+              .map(
+                item => `
+              <div class="bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC] space-y-2">
+                <div class="flex items-start justify-between gap-2">
+                  <span class="text-sm font-medium ${item.status === 'completed' ? 'line-through text-[#786E65]' : ''}">${escapeHtml(item.title)}</span>
+                  <button type="button" onclick="deleteLearningItem('${item.id}')" class="text-xs text-[#786E65] hover:text-[#A84A5C]">✕</button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <select onchange="updateLearningItem('${item.id}', 'status', this.value)" class="h-7 px-2 text-xs">
+                    <option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                    <option value="planned" ${item.status === 'planned' ? 'selected' : ''}>Planned</option>
+                    <option value="completed" ${item.status === 'completed' ? 'selected' : ''}>Completed</option>
+                  </select>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="${item.progress || 0}"
+                    onchange="updateLearningItem('${item.id}', 'progress', Number(this.value))"
+                    class="flex-1 accent-[#3F6250]"
+                  />
+                  <span class="text-xs font-semibold text-[#3F6250] w-9 text-right">${item.progress || 0}%</span>
+                </div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    /* Subpage: Family & Date-Specific Special Cleaning */
+    function renderFamilyPage() {
+      const d = state.selectedDate;
+      const filteredCleaning = state.specialCleaning
+        .filter(item => {
+          if (cleaningFilter === 'pending') return !item.done;
+          if (cleaningFilter === 'upcoming') return item.date >= d;
+          return true;
+        })
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      return `
+        <div class="card p-4 space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🏡</span>
+            <h2 class="text-base font-semibold">Family & Home Tasks</h2>
+          </div>
+
+          <form onsubmit="addFamilyItem(event)" class="flex gap-2">
+            <input type="date" id="new-fam-date" value="${d}" class="h-9 px-2 text-xs" />
+            <input type="text" id="new-fam-title" required placeholder="Family task / 家庭事项..." class="flex-1 h-9 px-3 text-sm" />
+            <button type="submit" class="px-3.5 h-9 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
+          </form>
+
+          <div class="space-y-1.5">
+            ${state.familyItems
+              .slice()
+              .sort((a, b) => b.date.localeCompare(a.date))
+              .map(
+                item => `
+              <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
+                <label class="flex items-center gap-2.5 text-sm cursor-pointer min-w-0">
+                  <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleFamilyItem('${item.id}')" class="w-4 h-4 accent-[#3F6250]" />
+                  <span class="truncate ${item.done ? 'line-through text-[#786E65]' : ''}">${escapeHtml(item.title)}</span>
+                </label>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-[11px] text-[#786E65]">${item.date}</span>
+                  <button type="button" onclick="deleteFamilyItem('${item.id}')" class="text-xs text-[#786E65] hover:text-[#A84A5C]">✕</button>
+                </div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        </div>
+
+        <div class="card p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🧹</span>
+              <h3 class="text-base font-semibold">Scheduled Special Cleaning</h3>
+            </div>
+            <div class="flex gap-1">
+              ${['all', 'upcoming', 'pending']
+                .map(
+                  f => `
+                <button
+                  type="button"
+                  onclick="setCleaningFilter('${f}')"
+                  class="px-2 py-0.5 rounded-full text-[11px] capitalize border ${
+                    cleaningFilter === f
+                      ? 'bg-[#3F6250] text-white border-[#3F6250]'
+                      : 'bg-[#FAF7F2] text-[#786E65] border-[#E6DFD3]'
+                  }"
+                >
+                  ${f}
+                </button>
+              `
+                )
+                .join('')}
+            </div>
+          </div>
+
+          <form onsubmit="addCleaningItem(event)" class="space-y-2 bg-[#FBF3E6]/60 p-3 rounded-xl border border-[#EEDCC0]">
+            <div class="grid grid-cols-2 gap-2">
+              <input type="date" id="clean-date" value="${d}" required class="h-8 px-2 text-xs" />
+              <input type="text" id="clean-area" placeholder="Area (e.g. Kitchen, Balcony)" class="h-8 px-2.5 text-xs" />
+            </div>
+            <input type="text" id="clean-task" required placeholder="Special cleaning task / 特别清洁任务..." class="w-full h-9 px-3 text-sm" />
+            <div class="flex gap-2">
+              <select id="clean-priority" class="h-8 px-2 text-xs">
+                <option value="Normal">Normal</option>
+                <option value="High">High Priority</option>
+              </select>
+              <input type="text" id="clean-notes" placeholder="Notes (optional)..." class="flex-1 h-8 px-2.5 text-xs" />
+              <button type="submit" class="px-3.5 h-8 rounded-xl bg-[#A66E2E] text-white text-xs font-medium">Schedule</button>
+            </div>
+          </form>
+
+          <div class="space-y-2">
+            ${
+              filteredCleaning.length === 0
+                ? `<p class="text-xs text-[#786E65]">No special cleaning tasks in this filter.</p>`
+                : filteredCleaning
+                    .map(c => {
+                      if (cleaningEditId === c.id) {
+                        return `
+                          <div class="bg-[#FAF7F2] p-3 rounded-xl border border-[#3F6250] space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                              <input type="date" id="edit-clean-date-${c.id}" value="${c.date}" class="h-8 px-2 text-xs" />
+                              <input type="text" id="edit-clean-area-${c.id}" value="${escapeHtml(c.area || '')}" class="h-8 px-2 text-xs" />
+                            </div>
+                            <input type="text" id="edit-clean-task-${c.id}" value="${escapeHtml(c.task)}" class="w-full h-8 px-2.5 text-sm" />
+                            <div class="flex gap-2">
+                              <input type="text" id="edit-clean-notes-${c.id}" value="${escapeHtml(c.notes || '')}" placeholder="Notes" class="flex-1 h-8 px-2 text-xs" />
+                              <button type="button" onclick="saveCleaningEdit('${c.id}')" class="px-3 h-8 rounded-lg bg-[#3F6250] text-white text-xs">Save</button>
+                              <button type="button" onclick="cancelCleaningEdit()" class="px-2.5 h-8 rounded-lg bg-white border border-[#E6DFD3] text-xs">Cancel</button>
+                            </div>
+                          </div>
+                        `;
+                      }
+                      return `
+                        <div class="bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC] space-y-1">
+                          <div class="flex items-start justify-between gap-2">
+                            <label class="flex items-center gap-2.5 text-sm font-medium cursor-pointer">
+                              <input type="checkbox" ${c.done ? 'checked' : ''} onchange="toggleCleaningItem('${c.id}')" class="w-4 h-4 accent-[#3F6250]" />
+                              <span class="${c.done ? 'line-through text-[#786E65]' : ''}">${escapeHtml(c.task)}</span>
+                            </label>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                              <button type="button" onclick="startCleaningEdit('${c.id}')" class="text-xs text-[#786E65] hover:text-[#2B2623]" title="Edit">✎</button>
+                              <button type="button" onclick="deleteCleaningItem('${c.id}')" class="text-xs text-[#786E65] hover:text-[#A84A5C]" title="Delete">✕</button>
+                            </div>
+                          </div>
+                          <div class="flex flex-wrap items-center gap-1.5 pl-6 text-[11px] text-[#786E65]">
+                            <span class="px-2 py-0.5 rounded-full bg-white border border-[#E6DFD3]">📅 ${c.date}</span>
+                            ${c.area ? `<span class="px-2 py-0.5 rounded-full bg-white border border-[#E6DFD3]">📍 ${escapeHtml(c.area)}</span>` : ''}
+                            ${c.priority === 'High' ? `<span class="px-2 py-0.5 rounded-full bg-[#F9ECEE] text-[#A84A5C]">High</span>` : ''}
+                            ${c.notes ? `<span>• ${escapeHtml(c.notes)}</span>` : ''}
+                          </div>
+                        </div>
+                      `;
+                    })
+                    .join('')
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    /* Subpage: Reading */
+    function renderReadingPage() {
+      return `
+        <div class="card p-4 space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📚</span>
+            <h2 class="text-base font-semibold">Reading List</h2>
+          </div>
+
+          <form onsubmit="addBookItem(event)" class="space-y-2 bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC]">
+            <input type="text" id="book-title" required placeholder="Book title / 书名..." class="w-full h-9 px-3 text-sm" />
+            <div class="flex gap-2">
+              <input type="text" id="book-author" placeholder="Author / 作者" class="flex-1 h-8 px-2.5 text-xs" />
+              <select id="book-status" class="h-8 px-2 text-xs">
+                <option value="reading">Reading</option>
+                <option value="to_read">To Read</option>
+                <option value="finished">Finished</option>
+              </select>
+              <button type="submit" class="px-3.5 h-8 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
+            </div>
+          </form>
+
+          <div class="space-y-2">
+            ${state.readingList
+              .map(
+                b => `
+              <div class="bg-[#FAF7F2] p-3 rounded-xl border border-[#EDE7DC] flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="text-sm font-medium truncate ${b.status === 'finished' ? 'line-through text-[#786E65]' : ''}">${escapeHtml(b.title)}</div>
+                  ${b.author ? `<div class="text-xs text-[#786E65]">${escapeHtml(b.author)}</div>` : ''}
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <select onchange="updateBookStatus('${b.id}', this.value)" class="h-7 px-2 text-xs">
+                    <option value="to_read" ${b.status === 'to_read' ? 'selected' : ''}>To Read</option>
+                    <option value="reading" ${b.status === 'reading' ? 'selected' : ''}>Reading</option>
+                    <option value="finished" ${b.status === 'finished' ? 'selected' : ''}>Finished</option>
+                  </select>
+                  <button type="button" onclick="deleteBookItem('${b.id}')" class="text-xs text-[#786E65] hover:text-[#A84A5C]">✕</button>
+                </div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    /* Subpage: Monthly Todo */
+    function renderTodoPage() {
+      const currentMonth = state.selectedDate.slice(0, 7);
+      const list = state.monthlyTodos.filter(t => t.month === currentMonth);
+
+      return `
+        <div class="card p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🗓️</span>
+              <h2 class="text-base font-semibold">Monthly Todo (${currentMonth})</h2>
+            </div>
+          </div>
+
+          <form onsubmit="addTodoItem(event)" class="flex gap-2">
+            <input type="text" id="todo-title" required placeholder="Add task for ${currentMonth}..." class="flex-1 h-9 px-3 text-sm" />
+            <button type="submit" class="px-3.5 h-9 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
+          </form>
+
+          <div class="space-y-1.5">
+            ${
+              list.length === 0
+                ? `<p class="text-xs text-[#786E65]">No tasks for ${currentMonth}.</p>`
+                : list
+                    .map(
+                      t => `
+                    <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
+                      <label class="flex items-center gap-2.5 text-sm cursor-pointer min-w-0">
+                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodoItem('${t.id}')" class="w-4 h-4 accent-[#3F6250]" />
+                        <span class="truncate ${t.done ? 'line-through text-[#786E65]' : ''}">${escapeHtml(t.title)}</span>
+                      </label>
+                      <button type="button" onclick="deleteTodoItem('${t.id}')" class="text-xs text-[#786E65] hover:text-[#A84A5C]">✕</button>
+                    </div>
+                  `
+                    )
+                    .join('')
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    /* Subpage: Diary (Single Free-Text Body + Reverse-Chronological Archive) */
+    function renderDiaryPage() {
+      const d = state.selectedDate;
+      const currentContent = (state.diaryEntries[d] && state.diaryEntries[d].content) || '';
+
+      const allEntries = Object.entries(state.diaryEntries)
+        .filter(([dateKey, entry]) => entry && entry.content && entry.content.trim().length > 0)
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .filter(([dateKey, entry]) => {
+          if (!diarySearchQuery.trim()) return true;
+          const q = diarySearchQuery.toLowerCase();
+          return dateKey.includes(q) || entry.content.toLowerCase().includes(q);
+        });
+
+      return `
+        <div class="card p-4 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">📖</span>
+              <h2 class="text-base font-semibold">Diary — ${d}</h2>
+            </div>
+            <span class="text-xs text-[#786E65]">${currentContent.trim().length} chars</span>
+          </div>
+
+          <textarea
+            rows="6"
+            placeholder="Write freely in English or 中文..."
+            oninput="updateDiaryContent(this.value)"
+            class="w-full p-3 text-sm bg-[#FAF7F2] border border-[#EDE7DC] rounded-xl leading-relaxed"
+          >${escapeHtml(currentContent)}</textarea>
+        </div>
+
+        <div class="card p-4 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-semibold">Written Entries (${allEntries.length})</h3>
+            <input
+              type="text"
+              value="${escapeHtml(diarySearchQuery)}"
+              oninput="setDiarySearch(this.value)"
+              placeholder="Search date or text..."
+              class="w-44 h-8 px-2.5 text-xs"
+            />
+          </div>
+
+          <div class="space-y-2">
+            ${
+              allEntries.length === 0
+                ? `<p class="text-xs text-[#786E65]">No written entries found.</p>`
+                : allEntries
+                    .map(([dateKey, entry]) => {
+                      const text = entry.content.trim();
+                      const isLong = text.length > 140;
+                      const expanded = !!expandedDiaryDates[dateKey];
+                      const shownText = isLong && !expanded ? text.slice(0, 140) + '…' : text;
+                      return `
+                        <div class="bg-[#FAF7F2] p-3 rounded-xl border ${
+                          dateKey === d ? 'border-[#3F6250]' : 'border-[#EDE7DC]'
+                        } space-y-1.5">
+                          <div class="flex items-center justify-between">
+                            <button
+                              type="button"
+                              onclick="setSelectedDate('${dateKey}')"
+                              class="text-xs font-semibold text-[#3F6250] hover:underline"
+                            >
+                              📅 ${dateKey} (${text.length} chars)
+                            </button>
+                            <div class="flex items-center gap-2">
+                              ${
+                                isLong
+                                  ? `<button type="button" onclick="toggleDiaryExpand('${dateKey}')" class="text-[11px] text-[#786E65] hover:text-[#2B2623]">${
+                                      expanded ? 'Collapse' : 'Expand'
+                                    }</button>`
+                                  : ''
+                              }
+                              <button type="button" onclick="deleteDiaryEntry('${dateKey}')" class="text-xs text-[#786E65] hover:text-[#A84A5C]" title="Delete Entry">✕</button>
+                            </div>
+                          </div>
+                          <p onclick="setSelectedDate('${dateKey}')" class="text-sm text-[#2B2623] whitespace-pre-wrap cursor-pointer">${escapeHtml(shownText)}</p>
+                        </div>
+                      `;
+                    })
+                    .join('')
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    /* Subpage: Shopping List */
+    function renderShoppingPage() {
+      return `
+        <div class="card p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🛒</span>
+              <h2 class="text-base font-semibold">Shopping List</h2>
+            </div>
+            ${
+              state.shoppingList.some(s => s.bought)
+                ? `<button type="button" onclick="clearBoughtShopping()" class="text-xs text-[#A84A5C] hover:underline">Clear Bought</button>`
+                : ''
+            }
+          </div>
+
+          <form onsubmit="addShoppingItem(event)" class="flex gap-2">
+            <input type="text" id="shop-name" required placeholder="Item name (English / 中文)..." class="flex-1 h-9 px-3 text-sm" />
+            <button type="submit" class="px-3.5 h-9 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
+          </form>
+
+          <div class="space-y-1.5">
+            ${state.shoppingList
+              .map(
+                s => `
+              <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EDE7DC]">
+                <label class="flex items-center gap-2.5 text-sm cursor-pointer min-w-0">
+                  <input type="checkbox" ${s.bought ? 'checked' : ''} onchange="toggleShoppingItem('${s.id}')" class="w-4 h-4 accent-[#3F6250]" />
+                  <span class="truncate ${s.bought ? 'line-through text-[#786E65]' : ''}">${escapeHtml(s.name)}</span>
+                </label>
+                <button type="button" onclick="deleteShoppingItem('${s.id}')" class="text-xs text-[#786E65] hover:text-[#A84A5C]">✕</button>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    /* Data Mutations */
+    function updateHealthField(field, value) {
+      const log = getHealthLog(state.selectedDate);
+      log[field] = value;
+      saveState();
+      render();
+    }
+
+    function adjustGiCount(delta) {
+      const log = getHealthLog(state.selectedDate);
+      const next = Math.max(0, (Number(log.giDiscomfortCount) || 0) + delta);
+      log.giDiscomfortCount = next;
+      saveState();
+      render();
+    }
+
+    function togglePeriodStart(checked) {
+      const log = getHealthLog(state.selectedDate);
+      log.periodStart = checked;
+      if (checked) {
+        state.settings.lastPeriodDate = state.selectedDate;
+      }
+      saveState();
+      render();
+    }
+
+    function addLearningItem(e) {
+      e.preventDefault();
+      const title = document.getElementById('new-learn-title').value.trim();
+      const status = document.getElementById('new-learn-status').value;
+      const progress = Math.min(100, Math.max(0, Number(document.getElementById('new-learn-progress').value) || 0));
+      if (!title) return;
+      state.learningItems.unshift({ id: 'learn-' + Date.now(), title, status, progress });
+      saveState();
+      render();
+    }
+
+    function updateLearningItem(id, field, val) {
+      const item = state.learningItems.find(i => i.id === id);
+      if (item) {
+        item[field] = val;
+        if (field === 'status' && val === 'completed') item.progress = 100;
+        saveState();
+        render();
+      }
+    }
+
+    function deleteLearningItem(id) {
+      state.learningItems = state.learningItems.filter(i => i.id !== id);
+      saveState();
+      render();
+    }
+
+    function addFamilyItem(e) {
+      e.preventDefault();
+      const date = document.getElementById('new-fam-date').value || state.selectedDate;
+      const title = document.getElementById('new-fam-title').value.trim();
+      if (!title) return;
+      state.familyItems.unshift({ id: 'fam-' + Date.now(), date, title, done: false });
+      saveState();
+      render();
+    }
+
+    function toggleFamilyItem(id) {
+      const item = state.familyItems.find(i => i.id === id);
+      if (item) {
+        item.done = !item.done;
+        saveState();
+        render();
+      }
+    }
+
+    function deleteFamilyItem(id) {
+      state.familyItems = state.familyItems.filter(i => i.id !== id);
+      saveState();
+      render();
+    }
+
+    function setCleaningFilter(f) {
+      cleaningFilter = f;
+      render();
+    }
+
+    function startCleaningEdit(id) {
+      cleaningEditId = id;
+      render();
+    }
+
+    function cancelCleaningEdit() {
+      cleaningEditId = null;
+      render();
+    }
+
+    function addCleaningItem(e) {
+      e.preventDefault();
+      const date = document.getElementById('clean-date').value || state.selectedDate;
+      const area = document.getElementById('clean-area').value.trim();
+      const task = document.getElementById('clean-task').value.trim();
+      const priority = document.getElementById('clean-priority').value;
+      const notes = document.getElementById('clean-notes').value.trim();
+      if (!task) return;
+      state.specialCleaning.push({
+        id: 'clean-' + Date.now(),
+        date,
+        area,
+        task,
+        priority,
+        notes,
+        done: false
+      });
+      saveState();
+      render();
+      showToast('Cleaning task scheduled');
+    }
+
+    function saveCleaningEdit(id) {
+      const item = state.specialCleaning.find(c => c.id === id);
+      if (!item) return;
+      item.date = document.getElementById(`edit-clean-date-${id}`).value || item.date;
+      item.area = document.getElementById(`edit-clean-area-${id}`).value.trim();
+      item.task = document.getElementById(`edit-clean-task-${id}`).value.trim() || item.task;
+      item.notes = document.getElementById(`edit-clean-notes-${id}`).value.trim();
+      cleaningEditId = null;
+      saveState();
+      render();
+    }
+
+    function toggleCleaningItem(id) {
+      const item = state.specialCleaning.find(c => c.id === id);
+      if (item) {
+        item.done = !item.done;
+        saveState();
+        render();
+      }
+    }
+
+    function deleteCleaningItem(id) {
+      state.specialCleaning = state.specialCleaning.filter(c => c.id !== id);
+      saveState();
+      render();
+    }
+
+    function addBookItem(e) {
+      e.preventDefault();
+      const title = document.getElementById('book-title').value.trim();
+      const author = document.getElementById('book-author').value.trim();
+      const status = document.getElementById('book-status').value;
+      if (!title) return;
+      state.readingList.unshift({ id: 'book-' + Date.now(), title, author, status });
+      saveState();
+      render();
+    }
+
+    function updateBookStatus(id, status) {
+      const book = state.readingList.find(b => b.id === id);
+      if (book) {
+        book.status = status;
+        saveState();
+        render();
+      }
+    }
+
+    function deleteBookItem(id) {
+      state.readingList = state.readingList.filter(b => b.id !== id);
+      saveState();
+      render();
+    }
+
+    function addTodoItem(e) {
+      e.preventDefault();
+      const title = document.getElementById('todo-title').value.trim();
+      if (!title) return;
+      state.monthlyTodos.unshift({
+        id: 'todo-' + Date.now(),
+        month: state.selectedDate.slice(0, 7),
+        title,
+        done: false
+      });
+      saveState();
+      render();
+    }
+
+    function toggleTodoItem(id) {
+      const todo = state.monthlyTodos.find(t => t.id === id);
+      if (todo) {
+        todo.done = !todo.done;
+        saveState();
+        render();
+      }
+    }
+
+    function deleteTodoItem(id) {
+      state.monthlyTodos = state.monthlyTodos.filter(t => t.id !== id);
+      saveState();
+      render();
+    }
+
+    function updateDiaryContent(val) {
+      const d = state.selectedDate;
+      if (!state.diaryEntries[d]) {
+        state.diaryEntries[d] = { content: '', updatedAt: new Date().toISOString() };
+      }
+      state.diaryEntries[d].content = val;
+      state.diaryEntries[d].updatedAt = new Date().toISOString();
+      saveState();
+      renderAchievements();
+    }
+
+    function setDiarySearch(q) {
+      diarySearchQuery = q;
+      render();
+    }
+
+    function toggleDiaryExpand(dateKey) {
+      expandedDiaryDates[dateKey] = !expandedDiaryDates[dateKey];
+      render();
+    }
+
+    function deleteDiaryEntry(dateKey) {
+      delete state.diaryEntries[dateKey];
+      saveState();
+      render();
+      showToast('Diary entry deleted');
+    }
+
+    function addShoppingItem(e) {
+      e.preventDefault();
+      const name = document.getElementById('shop-name').value.trim();
+      if (!name) return;
+      state.shoppingList.unshift({ id: 'shop-' + Date.now(), name, bought: false });
+      saveState();
+      render();
+    }
+
+    function toggleShoppingItem(id) {
+      const item = state.shoppingList.find(s => s.id === id);
+      if (item) {
+        item.bought = !item.bought;
+        saveState();
+        render();
+      }
+    }
+
+    function clearBoughtShopping() {
+      state.shoppingList = state.shoppingList.filter(s => !s.bought);
+      saveState();
+      render();
+    }
+
+    function deleteShoppingItem(id) {
+      state.shoppingList = state.shoppingList.filter(s => s.id !== id);
+      saveState();
+      render();
+    }
+
+    /* Modals: Quick Add / Settings / Cloud Sync / Reset */
+    function openModal(type) {
+      const backdrop = document.getElementById('modal-backdrop');
+      const box = document.getElementById('modal-box');
+      if (!backdrop || !box) return;
+      backdrop.classList.remove('hidden');
+
+      if (type === 'settings') {
+        box.innerHTML = `
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold">⚙️ Tracking Start & Cycle Settings</h3>
+            <button type="button" onclick="closeModal()" class="text-xs text-[#786E65]">✕</button>
+          </div>
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block text-[#786E65] mb-1">Tracking Start Date (Remaining-days denominator in start year)</label>
+              <input type="date" id="set-start-date" value="${escapeHtml(state.settings.startDate || DEFAULT_TODAY)}" class="w-full h-9 px-2.5 text-sm" />
+            </div>
+            <div>
+              <label class="block text-[#786E65] mb-1">Last Period Start Date</label>
+              <input type="date" id="set-last-period" value="${escapeHtml(state.settings.lastPeriodDate || '')}" class="w-full h-9 px-2.5 text-sm" />
+            </div>
+            <div>
+              <label class="block text-[#786E65] mb-1">Cycle Length (days)</label>
+              <input type="number" id="set-cycle-len" min="20" max="45" value="${escapeHtml(state.settings.cycleLength || 28)}" class="w-full h-9 px-2.5 text-sm" />
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="closeModal()" class="px-3 h-8 rounded-xl border border-[#E6DFD3]">Cancel</button>
+              <button type="button" onclick="saveSettingsModal()" class="px-4 h-8 rounded-xl bg-[#3F6250] text-white font-medium">Save</button>
+            </div>
+          </div>
+        `;
+      } else if (type === 'cloud') {
+        const c = state.cloud || {};
+        box.innerHTML = `
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold">☁️ Supabase Cloud Sync</h3>
+            <button type="button" onclick="closeModal()" class="text-xs text-[#786E65]">✕</button>
+          </div>
+          <div class="space-y-2.5 text-xs">
+            <div>
+              <label class="block text-[#786E65] mb-1">Supabase Project URL</label>
+              <input type="text" id="cloud-url" value="${escapeHtml(c.url || '')}" placeholder="https://xxxx.supabase.co" class="w-full h-9 px-2.5 text-sm" />
+            </div>
+            <div>
+              <label class="block text-[#786E65] mb-1">Anon Key</label>
+              <input type="password" id="cloud-key" value="${escapeHtml(c.anonKey || '')}" placeholder="eyJ..." class="w-full h-9 px-2.5 text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[#786E65] mb-1">Table Name</label>
+                <input type="text" id="cloud-table" value="${escapeHtml(c.table || 'life_journal_state')}" class="w-full h-9 px-2.5 text-sm" />
+              </div>
+              <div>
+                <label class="block text-[#786E65] mb-1">Record ID</label>
+                <input type="text" id="cloud-id" value="${escapeHtml(c.recordId || 'default_user')}" class="w-full h-9 px-2.5 text-sm" />
+              </div>
+            </div>
+            <label class="flex items-center gap-2 pt-1 cursor-pointer">
+              <input type="checkbox" id="cloud-autosync" ${c.autoSync ? 'checked' : ''} class="w-4 h-4 accent-[#3F6250]" />
+              <span>Enable Auto-Sync on change</span>
+            </label>
+            ${c.lastSynced ? `<div class="text-[11px] text-[#786E65]">Last synced: ${escapeHtml(c.lastSynced)}</div>` : ''}
+            <div class="flex flex-wrap justify-between gap-2 pt-2">
+              <div class="flex gap-1.5">
+                <button type="button" onclick="saveCloudConfig(); pullFromCloud();" class="px-3 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] font-medium">Pull</button>
+                <button type="button" onclick="saveCloudConfig(); pushToCloud();" class="px-3 h-8 rounded-xl bg-[#FAF7F2] border border-[#E6DFD3] font-medium">Push</button>
+              </div>
+              <button type="button" onclick="saveCloudConfig(); closeModal();" class="px-4 h-8 rounded-xl bg-[#3F6250] text-white font-medium">Save</button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function openQuickAdd(kind) {
+      const backdrop = document.getElementById('modal-backdrop');
+      const box = document.getElementById('modal-box');
+      if (!backdrop || !box) return;
+      backdrop.classList.remove('hidden');
+
+      if (kind === 'reading') {
+        box.innerHTML = `
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold">📖 Quick Add Book</h3>
+            <button type="button" onclick="closeModal()" class="text-xs text-[#786E65]">✕</button>
+          </div>
+          <form onsubmit="submitQuickAdd(event, 'reading')" class="space-y-2.5">
+            <input type="text" id="qa-title" required placeholder="Book title / 书名..." class="w-full h-9 px-3 text-sm" autofocus />
+            <input type="text" id="qa-sub" placeholder="Author / 作者 (optional)" class="w-full h-8 px-3 text-xs" />
+            <div class="flex justify-end gap-2 pt-1">
+              <button type="button" onclick="closeModal()" class="px-3 h-8 rounded-xl border border-[#E6DFD3] text-xs">Cancel</button>
+              <button type="submit" class="px-4 h-8 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
+            </div>
+          </form>
+        `;
+      } else if (kind === 'todo') {
+        box.innerHTML = `
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold">📅 Quick Add Monthly Todo (${state.selectedDate.slice(0, 7)})</h3>
+            <button type="button" onclick="closeModal()" class="text-xs text-[#786E65]">✕</button>
+          </div>
+          <form onsubmit="submitQuickAdd(event, 'todo')" class="space-y-2.5">
+            <input type="text" id="qa-title" required placeholder="Task / 待办事项..." class="w-full h-9 px-3 text-sm" autofocus />
+            <div class="flex justify-end gap-2 pt-1">
+              <button type="button" onclick="closeModal()" class="px-3 h-8 rounded-xl border border-[#E6DFD3] text-xs">Cancel</button>
+              <button type="submit" class="px-4 h-8 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
+            </div>
+          </form>
+        `;
+      } else if (kind === 'shopping') {
+        box.innerHTML = `
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold">🛒 Quick Add Shopping Item</h3>
+            <button type="button" onclick="closeModal()" class="text-xs text-[#786E65]">✕</button>
+          </div>
+          <form onsubmit="submitQuickAdd(event, 'shopping')" class="space-y-2.5">
+            <input type="text" id="qa-title" required placeholder="Item / 购买项目..." class="w-full h-9 px-3 text-sm" autofocus />
+            <div class="flex justify-end gap-2 pt-1">
+              <button type="button" onclick="closeModal()" class="px-3 h-8 rounded-xl border border-[#E6DFD3] text-xs">Cancel</button>
+              <button type="submit" class="px-4 h-8 rounded-xl bg-[#3F6250] text-white text-xs font-medium">Add</button>
+            </div>
+          </form>
+        `;
+      }
+    }
+
+    function openResetModal() {
+      const backdrop = document.getElementById('modal-backdrop');
+      const box = document.getElementById('modal-box');
+      if (!backdrop || !box) return;
+      backdrop.classList.remove('hidden');
+      box.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold">♻️ Reset Local Data</h3>
+          <button type="button" onclick="closeModal()" class="text-xs text-[#786E65]">✕</button>
+        </div>
+        <p class="text-xs text-[#786E65] mb-3">
+          Reset local storage data back to the initial sample state? Export a JSON backup first if you want to keep current records.
+        </p>
+        <div class="flex justify-end gap-2">
+          <button type="button" onclick="closeModal()" class="px-3 h-8 rounded-xl border border-[#E6DFD3] text-xs">Cancel</button>
+          <button type="button" onclick="performReset()" class="px-4 h-8 rounded-xl bg-[#A84A5C] text-white text-xs font-medium">Reset</button>
+        </div>
+      `;
+    }
+
+    function performReset() {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {
+        console.error('Failed to clear storage:', e);
+      }
+      state = createInitialState();
+      saveState(true);
+      closeModal();
+      render();
+      showToast('Data reset');
+    }
+
+    function submitQuickAdd(e, kind) {
+      e.preventDefault();
+      const title = document.getElementById('qa-title').value.trim();
+      if (!title) return;
+      if (kind === 'reading') {
+        const author = (document.getElementById('qa-sub') && document.getElementById('qa-sub').value.trim()) || '';
+        state.readingList.unshift({ id: 'book-' + Date.now(), title, author, status: 'reading' });
+      } else if (kind === 'todo') {
+        state.monthlyTodos.unshift({ id: 'todo-' + Date.now(), month: state.selectedDate.slice(0, 7), title, done: false });
+      } else if (kind === 'shopping') {
+        state.shoppingList.unshift({ id: 'shop-' + Date.now(), name: title, bought: false });
+      }
+      saveState();
+      closeModal();
+      render();
+    }
+
+    function closeModal() {
+      const backdrop = document.getElementById('modal-backdrop');
+      if (backdrop) backdrop.classList.add('hidden');
+    }
+
+    function saveSettingsModal() {
+      state.settings.startDate = document.getElementById('set-start-date').value || DEFAULT_TODAY;
+      state.settings.lastPeriodDate = document.getElementById('set-last-period').value || '';
+      state.settings.cycleLength = Math.max(20, Math.min(45, Number(document.getElementById('set-cycle-len').value) || 28));
+      saveState();
+      closeModal();
+      render();
+      showToast('Settings saved');
+    }
+
+    /* Supabase Cloud Sync Helpers */
+    function saveCloudConfig() {
+      state.cloud = {
+        ...(state.cloud || {}),
+        url: document.getElementById('cloud-url').value.trim(),
+        anonKey: document.getElementById('cloud-key').value.trim(),
+        table: document.getElementById('cloud-table').value.trim() || 'life_journal_state',
+        recordId: document.getElementById('cloud-id').value.trim() || 'default_user',
+        autoSync: !!document.getElementById('cloud-autosync').checked
+      };
+      saveState(true);
+      updateSyncIndicator();
+    }
+
+    function getSupabaseClient() {
+      const c = state.cloud;
+      if (!c || !c.url || !c.anonKey || !window.supabase || typeof window.supabase.createClient !== 'function') {
+        return null;
+      }
+      try {
+        return window.supabase.createClient(c.url, c.anonKey);
+      } catch (e) {
+        console.error('Supabase client error:', e);
+        return null;
+      }
+    }
+
+    async function pushToCloud(silent = false) {
+      const client = getSupabaseClient();
+      if (!client) {
+        if (!silent) openModal('cloud');
+        return;
+      }
+      const c = state.cloud;
+      const payload = {
+        id: c.recordId || 'default_user',
+        payload: state,
+        updated_at: new Date().toISOString()
+      };
+      try {
+        const { error } = await client.from(c.table || 'life_journal_state').upsert(payload, { onConflict: 'id' });
+        if (error) {
+          if (!silent) showToast('Cloud push failed');
+          console.error(error);
+        } else {
+          state.cloud.lastSynced = new Date().toLocaleTimeString();
+          saveState(true);
+          updateSyncIndicator();
+          if (!silent) showToast('Synced to cloud');
+        }
+      } catch (err) {
+        if (!silent) showToast('Cloud push error');
+        console.error(err);
+      }
+    }
+
+    async function pullFromCloud() {
+      const client = getSupabaseClient();
+      if (!client) {
+        openModal('cloud');
+        return;
+      }
+      const c = state.cloud;
+      try {
+        const { data, error } = await client
+          .from(c.table || 'life_journal_state')
+          .select('payload')
+          .eq('id', c.recordId || 'default_user')
+          .single();
+        if (error || !data || !data.payload) {
+          showToast('Cloud pull failed');
+          console.error(error);
+        } else {
+          const savedCloud = { ...state.cloud, lastSynced: new Date().toLocaleTimeString() };
+          state = deepMerge(createInitialState(), data.payload);
+          state.cloud = savedCloud;
+          saveState(true);
+          render();
+          showToast('Pulled from cloud');
+        }
+      } catch (err) {
+        showToast('Cloud pull error');
+        console.error(err);
+      }
+    }
+
+    function syncNow() {
+      if (!state.cloud || !state.cloud.url || !state.cloud.anonKey) {
+        openModal('cloud');
+        return;
+      }
+      pushToCloud(false);
+    }
+
+    function toggleAutoSync() {
+      if (!state.cloud || !state.cloud.url || !state.cloud.anonKey) {
+        openModal('cloud');
+        return;
+      }
+      state.cloud.autoSync = !state.cloud.autoSync;
+      saveState(true);
+      updateSyncIndicator();
+      showToast(state.cloud.autoSync ? 'Auto-Sync ON' : 'Auto-Sync OFF');
+    }
+
+    function updateSyncIndicator() {
+      const dot = document.getElementById('sync-status-dot');
+      const autoBtn = document.getElementById('auto-sync-btn');
+      const hasCloud = !!(state.cloud && state.cloud.url && state.cloud.anonKey);
+      if (dot) {
+        dot.className = `inline-block w-2 h-2 rounded-full ${
+          hasCloud ? (state.cloud.autoSync ? 'bg-[#3F6250]' : 'bg-[#A66E2E]') : 'bg-[#B5ABA0]'
+        }`;
+      }
+      if (autoBtn) {
+        autoBtn.className = `btn-pill w-8 h-8 rounded-xl border flex items-center justify-center text-sm ${
+          state.cloud && state.cloud.autoSync
+            ? 'bg-[#EBF1ED] border-[#3F6250] text-[#3F6250]'
+            : 'bg-[#FAF7F2] border-[#E6DFD3]'
+        }`;
+      }
+    }
+
+    /* Export / Import */
+    function exportJSON() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `life-journal-hub-${state.selectedDate}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Backup exported');
+    }
+
+    function importJSON(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          state = deepMerge(createInitialState(), parsed);
+          saveState(true);
+          render();
+          showToast('Backup imported');
+        } catch (err) {
+          showToast('Invalid JSON file');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    /* Master Render */
+    function render() {
+      document.body.classList.toggle('mobile-frame-mode', !!state.mobileFrame);
+      const headerLabel = document.getElementById('header-date-label');
+      if (headerLabel) headerLabel.textContent = state.selectedDate;
+      const picker = document.getElementById('footer-date-picker');
+      if (picker && picker.value !== state.selectedDate) {
+        picker.value = state.selectedDate;
+      }
+
+      renderNav();
+      updateSyncIndicator();
+
+      const main = document.getElementById('main-content');
+      if (!main) return;
+      switch (state.activeTab) {
+        case 'health':
+          main.innerHTML = renderHealthPage();
+          break;
+        case 'learning':
+          main.innerHTML = renderLearningPage();
+          break;
+        case 'family':
+          main.innerHTML = renderFamilyPage();
+          break;
+        case 'reading':
+          main.innerHTML = renderReadingPage();
+          break;
+        case 'todo':
+          main.innerHTML = renderTodoPage();
+          break;
+        case 'diary':
+          main.innerHTML = renderDiaryPage();
+          break;
+        case 'shopping':
+          main.innerHTML = renderShoppingPage();
+          break;
+        case 'home':
+        default:
+          main.innerHTML = renderHome();
+          break;
+      }
+
+      renderAchievements();
+    }
+
+    document.getElementById('modal-backdrop').addEventListener('click', e => {
+      if (e.target.id === 'modal-backdrop') closeModal();
+    });
+
+    render();
+  </script>
+</body>
+</html>
